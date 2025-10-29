@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<title>แบบทดสอบการขายประกันทางโทรศัพท์</title>
+<style>
+    body { font-family: 'TH Sarabun New', sans-serif; padding: 20px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    h2 { margin-top: 40px; }
+    #certificate { border: 5px solid #333; padding: 40px; width: 800px; margin: 40px auto; text-align: center; display: none; }
+  </style>
+</head>
+<body>
+<h1>แบบทดสอบการขายประกันทางโทรศัพท์</h1>
+<!-- ช่วงที่ 1: เปิดตัว -->
+<h2>ช่วงที่ 1: เปิดตัว (รอบที่ <span id="round">1</span>/4)</h2>
+<audio id="customerAudio" src="audio/customer_intro_1.mp3"></audio>
+<button onclick="playCustomerAudio()">🔊 เล่นเสียงลูกค้า</button>
+<button id="recordBtn" onclick="toggleRecording()">🎙️ เริ่มบันทึกเสียง</button>
+<button disabled="" id="nextBtn" onclick="nextRound()">➡️ ถัดไป</button>
+<p id="status">ยังไม่เริ่มบันทึก</p>
+<!-- ช่วงที่ 2: ตอบคำถาม -->
+<h2>ช่วงที่ 2: ตอบคำถามลูกค้า (รอบที่ <span id="qRound">1</span>/10)</h2>
+<audio id="questionAudio"></audio>
+<button onclick="playRandomQuestion()">🔊 สุ่มคำถามลูกค้า</button>
+<button disabled="" id="answerBtn" onclick="toggleAnswerRecording()">🎙️ เริ่มบันทึกคำตอบ</button>
+<button disabled="" id="nextQBtn" onclick="nextQuestion()">➡️ ถัดไป</button>
+<p id="qStatus">ยังไม่เริ่ม</p>
+<!-- ช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง -->
+<h2>ช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง (รอบที่ <span id="cRound">1</span>/5)</h2>
+<button id="closeBtn" onclick="toggleCloseRecording()">🎙️ บันทึกสคริปต์ปิดการขาย</button>
+<button disabled="" id="showObjectionBtn" onclick="playRandomObjection()">🎧 สุ่มข้อโต้แย้ง</button>
+<audio id="objectionAudio"></audio>
+<button disabled="" id="replyBtn" onclick="toggleReplyRecording()">🎙️ บันทึกเสียงตอบข้อโต้แย้ง</button>
+<button disabled="" id="nextCBtn" onclick="nextCloseRound()">➡️ ถัดไป</button>
+<p id="cStatus">ยังไม่เริ่ม</p>
+<!-- ใบประกาศนียบัตร -->
+<div id="certificate">
+<h1>ใบประกาศนียบัตร</h1>
+<p>ขอมอบให้แก่</p>
+<h2 id="traineeName">[ชื่อพนักงาน]</h2>
+<p>เพื่อแสดงว่าได้ผ่านการทดสอบ</p>
+<p><strong>หลักสูตรการขายประกันทางโทรศัพท์</strong></p>
+<p>ซึ่งประกอบด้วยการพูดเปิดตัว, การตอบคำถามลูกค้า, และการปิดการขายพร้อมตอบข้อโต้แย้ง</p>
+<p style="margin-top: 40px;">ลงชื่อ....................................................</p>
+<p>(หัวหน้าฝึกอบรม)</p>
+<p style="margin-top: 20px;">วันที่ออกใบประกาศ: <span id="issueDate"></span></p>
+</div>
+<button onclick="generateCertificate()">🎓 แสดงใบประกาศ</button>
+<script>
+  // ช่วงที่ 1
+  let round = 1;
+  const maxRounds = 4;
+  const roundSpan = document.getElementById("round");
+  const status = document.getElementById("status");
+  const recordBtn = document.getElementById("recordBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  let mediaRecorder;
+  let audioChunks = [];
+
+  function playCustomerAudio() {
+    document.getElementById("customerAudio").play();
+  }
+
+  async function toggleRecording() {
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `intro_round_${round}.webm`;
+        a.click();
+        audioChunks = [];
+      };
+      mediaRecorder.start();
+      status.textContent = "🔴 กำลังบันทึกเสียง...";
+      recordBtn.textContent = "⏹️ หยุดบันทึก";
+      nextBtn.disabled = true;
+    } else {
+      mediaRecorder.stop();
+      status.textContent = "✅ บันทึกเสร็จแล้ว";
+      recordBtn.textContent = "🎙️ เริ่มบันทึกเสียง";
+      nextBtn.disabled = false;
+    }
+  }
+
+  function nextRound() {
+    if (round < maxRounds) {
+      round++;
+      roundSpan.textContent = round;
+      status.textContent = "ยังไม่เริ่มบันทึก";
+      nextBtn.disabled = true;
+    } else {
+      status.textContent = "🎉 เสร็จสิ้นช่วงเปิดตัวแล้ว!";
+      recordBtn.disabled = true;
+      nextBtn.disabled = true;
+    }
+  }
+
+  // ช่วงที่ 2
+  const questionFiles = ["audio/q1.mp3","audio/q2.mp3","audio/q3.mp3","audio/q4.mp3","audio/q5.mp3","audio/q6.mp3","audio/q7.mp3","audio/q8.mp3","audio/q9.mp3","audio/q10.mp3"];
+  let qRound = 1;
+  const maxQ = 10;
+  const qRoundSpan = document.getElementById("qRound");
+  const qStatus = document.getElementById("qStatus");
+  const answerBtn = document.getElementById("answerBtn");
+  const nextQBtn = document.getElementById("nextQBtn");
+  const questionAudio = document.getElementById("questionAudio");
+  let qRecorder;
+  let qChunks = [];
+
+  function playRandomQuestion() {
+    const selectedFile = questionFiles[Math.floor(Math.random() * questionFiles.length)];
+    questionAudio.src = selectedFile;
+    questionAudio.play();
+    qStatus.textContent = "🔊 กำลังเล่นคำถาม...";
+    answerBtn.disabled = true;
+    questionAudio.onended = () => {
+      qStatus.textContent = "🎤 พร้อมบันทึกคำตอบ";
+      answerBtn.disabled = false;
+    };
+  }
+
+  async function toggleAnswerRecording() {
+    if (!qRecorder || qRecorder.state === "inactive") {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      qRecorder = new MediaRecorder(stream);
+      qRecorder.ondataavailable = e => qChunks.push(e.data);
+      qRecorder.onstop = () => {
+        const blob = new Blob(qChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `answer_q${qRound}.webm`;
+        a.click();
+        qChunks = [];
+      };
+      qRecorder.start();
+      qStatus.textContent = "🔴 กำลังบันทึกคำตอบ...";
+      answerBtn.textContent = "⏹️ หยุดบันทึก";
+      nextQBtn.disabled = true;
+    } else {
+      qRecorder.stop();
+      qStatus.textContent = "✅ บันทึกเสร็จแล้ว";
+      answerBtn.textContent = "🎙️ เริ่มบันทึกคำตอบ";
+      nextQBtn.disabled = false;
+    }
+  }
+
+  function nextQuestion() {
+    if (qRound < maxQ) {
+      qRound++;
+      qRoundSpan.textContent = qRound;
+      qStatus.textContent = "ยังไม่เริ่ม";
+      nextQBtn.disabled = true;
+      answerBtn.disabled = true;
+    } else {
+      qStatus.textContent = "🎉 เสร็จสิ้นช่วงตอบคำถามแล้ว!";
+      answerBtn.disabled = true;
+      nextQBtn.disabled = true;
+    }
+  }
+
+  // ช่วงที่ 3
+  const objectionFiles = ["audio/obj1.mp3","audio/obj2.mp3","audio/obj3.mp3","audio/obj4.mp3","audio/obj5.mp3"];
+  let cRound = 1;
+  const maxC = 5;
+  const cRoundSpan = document.getElementById("cRound");
+  const cStatus = document.getElementById("cStatus");
+  const closeBtn = document.getElementById("closeBtn");
+  const showObjectionBtn = document.getElementById("showObjectionBtn");
+  const replyBtn = document.getElementById("replyBtn");
+  const nextCBtn = document.getElementById("nextCBtn");
+  const objectionAudio = document.getElementById("objectionAudio");
+  let closeRecorder, replyRecorder;
+  let closeChunks = [], replyChunks = [];
+
+  async function toggleCloseRecording() {
+    if (!closeRecorder || closeRecorder.state === "inactive") {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      closeRecorder = new MediaRecorder(stream);
+      closeRecorder.ondataavailable = e => closeChunks.push(e.data);
+      closeRecorder.onstop = () => {
+        const blob = new Blob(closeChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `close_sale_${cRound}.webm`;
+        a.click();
+        closeChunks = [];
+        showObjectionBtn.disabled = false;
+      };
+      closeRecorder.start();
+      cStatus.textContent = "🔴 กำลังบันทึกสคริปต์ปิดการขาย...";
+      closeBtn.textContent = "⏹️ หยุดบันทึก";
+    } else {
+      closeRecorder.stop();
+      cStatus.textContent = "✅ บันทึกสคริปต์เสร็จแล้ว";
+      closeBtn.textContent = "🎙️ บันทึกสคริปต์ปิดการขาย";
+    }
+  }
+
+  function playRandomObjection() {
+    const selectedFile = objectionFiles[Math.floor(Math.random() * objectionFiles.length)];
+    objectionAudio.src = selectedFile;
+    objectionAudio.play();
+    cStatus.textContent = "🔊 กำลังเล่นข้อโต้แย้ง...";
+    replyBtn.disabled = true;
+    objectionAudio.onended = () => {
+      cStatus.textContent = "🎤 พร้อมบันทึกเสียงตอบกลับ";
+      replyBtn.disabled = false;
+    };
+  }
+
+  async function toggleReplyRecording() {
+    if (!replyRecorder || replyRecorder.state === "inactive") {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      replyRecorder = new MediaRecorder(stream);
+      replyRecorder.ondataavailable = e => replyChunks.push(e.data);
+      replyRecorder.onstop = () => {
+        const blob = new Blob(replyChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `reply_obj_${cRound}.webm`;
+        a.click();
+        replyChunks = [];
+        nextCBtn.disabled = false;
+      };
+      replyRecorder.start();
+      cStatus.textContent = "🔴 กำลังบันทึกเสียงตอบกลับ...";
+      replyBtn.textContent = "⏹️ หยุดบันทึก";
+    } else {
+      replyRecorder.stop();
+      cStatus.textContent = "✅ บันทึกเสร็จแล้ว";
+      replyBtn.textContent = "🎙️ บันทึกเสียงตอบข้อโต้แย้ง";
+    }
+  }
+
+  function nextCloseRound() {
+    if (cRound < maxC) {
+      cRound++;
+      cRoundSpan.textContent = cRound;
+      cStatus.textContent = "ยังไม่เริ่ม";
+      showObjectionBtn.disabled = true;
+      replyBtn.disabled = true;
+      nextCBtn.disabled = true;
+    } else {
+      cStatus.textContent = "🎓 เสร็จสิ้นแบบทดสอบทั้งหมด! เตรียมแสดงใบประกาศ...";
+      closeBtn.disabled = true;
+      showObjectionBtn.disabled = true;
+      replyBtn.disabled = true;
+      nextCBtn.disabled = true;
+      document.getElementById("certificate").style.display = "block";
+    }
+  }
+
+  // ใบประกาศ
+  function generateCertificate() {
+    const name = prompt("กรุณากรอกชื่อพนักงาน:");
+    if (name) {
+      document.getElementById("traineeName").textContent = name;
+      const today = new Date().toLocaleDateString('th-TH', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+      document.getElementById("issueDate").textContent = today;
+      document.getElementById("certificate").scrollIntoView({ behavior: "smooth" });
+    }
+  }
+</script>
+<audio controls="True" id="customer-audio"></audio><script>
+document.addEventListener("DOMContentLoaded", function() {
+    const customerAudios = [
+        "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q1/test1_P1_P1Q1_1761213344884.webm",
+        "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q2/test1_P1_P1Q2_1761213382884.webm",
+        "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q3/test1_P1_P1Q3_1761213420059.webm"
+    ];
+
+    const button = document.getElementById("submit-recording");
+    const audioElement = document.getElementById("customer-audio");
+
+    if (button && audioElement) {
+        button.addEventListener("click", function() {
+            const randomIndex = Math.floor(Math.random() * customerAudios.length);
+            audioElement.src = customerAudios[randomIndex];
+            audioElement.play();
+        });
+    }
+});
+</script></body>
+</html>
