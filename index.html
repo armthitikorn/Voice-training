@@ -1,133 +1,353 @@
 <!DOCTYPE html>
-
 <html lang="th">
 <head>
-<meta charset="utf-8"/>
-<title>แบบทดสอบการขายประกันทางโทรศัพท์ (โต้ตอบอัตโนมัติ)</title>
-<style>
-    body { font-family: 'TH Sarabun New', sans-serif; padding: 20px; }
-    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
-    h2 { margin-top: 40px; }
-    #certificate { border: 5px solid #333; padding: 40px; width: 800px; margin: 40px auto; text-align: center; display: none; }
-</style>
+    <meta charset="utf-8"/>
+    <title>แบบทดสอบการขายประกันทางโทรศัพท์ (โต้ตอบอัตโนมัติ)</title>
+    <style>
+        body { font-family: 'TH Sarabun New', sans-serif; padding: 20px; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+        h2 { margin-top: 40px; }
+        /* สไตล์ใบประกาศนียบัตร (ซ่อนไว้ก่อน) */
+        #certificate { border: 5px solid #333; padding: 40px; width: 800px; margin: 40px auto; text-align: center; display: none; }
+    </style>
 </head>
 <body>
-<h1>แบบทดสอบการขายประกันทางโทรศัพท์ (โต้ตอบอัตโนมัติ)</h1>
+    <h1>แบบทดสอบการขายประกันทางโทรศัพท์ (โต้ตอบอัตโนมัติ)</h1>
 
-<h2>ช่วงที่ 1: เปิดตัว/โต้ตอบต้นสาย (เทิร์นที่ <span id="turnSpan">1</span>/10)</h2>
-<audio id="customerAudio" src=""></audio>
-<button id="recordBtn" onclick="toggleRecording()">🎙️ เริ่มบันทึกเสียง (พนักงาน)</button>
-<button disabled="" id="endTurnBtn" onclick="endTurn()">➡️ จบการพูด (ให้ลูกค้าโต้ตอบ)</button>
-<button disabled="" id="nextRoundBtn" onclick="nextRound()">✅ จบบทที่ 1 (ไปช่วงที่ 2)</button>
-<p id="status">รอเริ่มบันทึกบทพูดเปิดตัว</p>
+    <hr>
+    <h2>🗣️ ช่วงที่ 1: เปิดตัว/โต้ตอบต้นสาย (เทิร์นที่ <span id="turnSpan">1</span>/10)</h2>
+    <audio id="customerAudio" src=""></audio>
+    <button id="recordBtn" onclick="toggleRecording()">🎙️ เริ่มบันทึกเสียง (พนักงาน)</button>
+    <button disabled="" id="nextRoundBtn" onclick="nextRound()">✅ จบบทที่ 1 (ไปช่วงที่ 2)</button>
+    <p id="status">รอเริ่มบันทึกบทพูดเปิดตัว</p>
+    <hr>
 
-<h2>ช่วงที่ 2: ตอบคำถามลูกค้า...</h2>
-<h2>ช่วงที่ 3: ปิดการขาย...</h2>
-<div id="certificate" style="display:none;">...</div>
+    <h2>❓ ช่วงที่ 2: ตอบคำถามลูกค้า (รอบที่ <span id="qRound">1</span>/10)</h2>
+    <audio id="questionAudio"></audio>
+    <button onclick="playRandomQuestion()">🔊 สุ่มคำถามลูกค้า</button>
+    <button disabled="" id="answerBtn" onclick="toggleAnswerRecording()">🎙️ เริ่มบันทึกคำตอบ</button>
+    <button disabled="" id="nextQBtn" onclick="nextQuestion()">➡️ ถัดไป</button>
+    <p id="qStatus">ยังไม่เริ่ม</p>
+    <hr>
 
-<script>
-// ไฟล์เสียงลูกค้าที่คุณให้มา
-const customerReplies = [
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q1_fe75e00d-70f8-429a-a3ca-9e9b87a5f2de.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q2_a68fb010-ec6c-47c2-95b2-d839553fe4e7.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q3_d974acce-1bc1-4473-a9f6-d49a256636ab.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q4_c3dd3875-fac4-4ad0-96d7-31adf9175c69.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q5_60ca36aa-3425-4824-987a-ff6b7fd7dbe1.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q6_75f89f58-d31d-4edb-a47d-901d0dfc92d4.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q7_490b0134-6446-4708-b86c-785d31306d07.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q8_ad281257-c3b9-44dd-8ca5-0f383d438003.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q9_d33edd43-5fb9-4cca-a0a3-29dbc2387788.webm",
-    "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q10_68208219-7f94-48be-8446-d296d03711a3.webm"
-];
+    <h2>💰 ช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง (รอบที่ <span id="cRound">1</span>/5)</h2>
+    <button id="closeBtn" onclick="toggleCloseRecording()">🎙️ บันทึกสคริปต์ปิดการขาย</button>
+    <button disabled="" id="showObjectionBtn" onclick="playRandomObjection()">🎧 สุ่มข้อโต้แย้ง</button>
+    <audio id="objectionAudio"></audio>
+    <button disabled="" id="replyBtn" onclick="toggleReplyRecording()">🎙️ บันทึกเสียงตอบข้อโต้แย้ง</button>
+    <button disabled="" id="nextCBtn" onclick="nextCloseRound()">➡️ ถัดไป</button>
+    <p id="cStatus">ยังไม่เริ่ม</p>
+    <hr>
 
-// ช่วงที่ 1 (ปรับปรุงสำหรับโต้ตอบอัตโนมัติ)
-let round = 1; // ใช้เป็นตัวบ่งชี้บทสนทนา (ในที่นี้คือบทที่ 1 ตลอด)
-let turn = 0; // ลำดับการโต้ตอบในบทนั้น ๆ (0 คือบทพูดเปิดตัวของพนักงาน, 1-10 คือเสียงลูกค้าโต้ตอบ)
-const maxTurns = customerReplies.length; // จำนวนการโต้ตอบของลูกค้าคือ 10 เทิร์น
-const turnSpan = document.getElementById("turnSpan");
-const status = document.getElementById("status");
-const recordBtn = document.getElementById("recordBtn");
-const endTurnBtn = document.getElementById("endTurnBtn");
-const nextRoundBtn = document.getElementById("nextRoundBtn");
-const customerAudio = document.getElementById("customerAudio");
+    <div id="certificate">
+        <h1>ใบประกาศนียบัตร</h1>
+        <p>ขอมอบให้แก่</p>
+        <h2 id="traineeName">[ชื่อพนักงาน]</h2>
+        <p>เพื่อแสดงว่าได้ผ่านการทดสอบ</p>
+        <p><strong>หลักสูตรการขายประกันทางโทรศัพท์</strong></p>
+        <p>ซึ่งประกอบด้วยการพูดเปิดตัว, การตอบคำถามลูกค้า, และการปิดการขายพร้อมตอบข้อโต้แย้ง</p>
+        <p style="margin-top: 40px;">ลงชื่อ....................................................</p>
+        <p>(หัวหน้าฝึกอบรม)</p>
+        <p style="margin-top: 20px;">วันที่ออกใบประกาศ: <span id="issueDate"></span></p>
+    </div>
+    <button onclick="generateCertificate()">🎓 แสดงใบประกาศ</button>
 
-let mediaRecorder;
-let audioChunks = [];
+    <script>
+        // ไฟล์เสียงลูกค้าสำหรับช่วงที่ 1 (ต้นสาย) - 10 เทิร์น
+        const customerReplies = [
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q1_fe75e00d-70f8-429a-806f-ae77f5cde2de.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q2_a68fb010-ec6c-47c2-95b2-d839553fe4e7.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q3_d974acce-1bc1-4473-a9f6-d49a256636ab.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q4_c3dd3875-fac4-4ad0-96d7-31adf9175c69.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q5_60ca36aa-3425-4824-987a-ff6b7fd7dbe1.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q6_75f89f58-d31d-4edb-a47d-901d0dfc92d4.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q7_490b0134-6446-4708-b86c-785d31306d07.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q8_ad281257-c3b9-44dd-8ca5-0f383d438003.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q9_d33edd43-5fb9-4cca-a0a3-29dbc2387788.webm",
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q10_68208219-7f94-48be-8446-d296d03711a3.webm"
+        ];
 
-async function toggleRecording() {
-    if (!mediaRecorder || mediaRecorder.state === "inactive") {
-        // 1. เริ่มบันทึกเสียงพนักงาน
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-            // บันทึกเสร็จแล้ว - ดาวน์โหลดไฟล์
-            const blob = new Blob(audioChunks, { type: 'audio/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `intro_round_${round}_turn_${turn}.webm`;
-            a.click();
-            audioChunks = [];
+        // ------------------
+        // ช่วงที่ 1: โต้ตอบอัตโนมัติ (ใหม่)
+        // ------------------
+        let round = 1; // บทที่ 1
+        let turn = 0; // ลำดับการโต้ตอบในบทนั้น ๆ (0 คือบทพูดเปิดตัวของพนักงาน)
+        const maxTurns = customerReplies.length; 
+        const turnSpan = document.getElementById("turnSpan");
+        const status = document.getElementById("status");
+        const recordBtn = document.getElementById("recordBtn");
+        const nextRoundBtn = document.getElementById("nextRoundBtn");
+        const customerAudio = document.getElementById("customerAudio");
 
-            status.textContent = "✅ บันทึกเสร็จแล้ว - กด 'จบการพูด' เพื่อฟังลูกค้าโต้ตอบ";
-            recordBtn.textContent = "🎙️ เริ่มบันทึกเสียง (พนักงาน)";
-            recordBtn.disabled = true;
-            endTurnBtn.disabled = false;
-        };
-        mediaRecorder.start();
-        status.textContent = "🔴 กำลังบันทึกเสียงพนักงาน...";
-        recordBtn.textContent = "⏹️ หยุดบันทึก";
-        endTurnBtn.disabled = true;
-    } else {
-        // 2. หยุดบันทึก (จะไปทำงานใน mediaRecorder.onstop)
-        mediaRecorder.stop();
-    }
-}
+        let mediaRecorder;
+        let audioChunks = []; // เก็บ Audio Chunks ชั่วคราว (ไม่มีการดาวน์โหลด)
 
-function endTurn() {
-    endTurnBtn.disabled = true;
-    
-    // หาก turn = 0 คือบทพูดเปิดตัว
-    // turn = 1 คือคำโต้ตอบแรกของลูกค้า
-    // turn = maxTurns คือคำโต้ตอบสุดท้ายของลูกค้า
-    if (turn < maxTurns) {
-        turn++; // เพิ่มเทิร์นเพื่อไปใช้ไฟล์เสียงของลูกค้า
-        turnSpan.textContent = turn;
+        async function toggleRecording() {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                // เริ่มบันทึกเสียงพนักงาน
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    
+                    mediaRecorder.onstop = () => {
+                        // 1. หยุดบันทึกแล้ว: ล้าง Chunks ที่บันทึกไว้ (เนื่องจากไม่ได้บันทึกไฟล์)
+                        audioChunks = []; 
+                        
+                        status.textContent = "✅ หยุดบันทึกแล้ว - กำลังรอเสียงลูกค้า...";
+                        recordBtn.textContent = "🎙️ เริ่มบันทึกเสียง (พนักงาน)";
+                        recordBtn.disabled = true;
+                        
+                        // 2. เรียกฟังก์ชันโต้ตอบของลูกค้า (endTurn) ทันที
+                        endTurn(); 
+                    };
+                    
+                    mediaRecorder.start();
+                    status.textContent = "🔴 กำลังบันทึกเสียงพนักงาน...";
+                    recordBtn.textContent = "⏹️ หยุดบันทึก";
+                    nextRoundBtn.disabled = true;
 
-        // 3. เล่นเสียงลูกค้าโต้ตอบอัตโนมัติ (ใช้ customerReplies[turn - 1] เพราะ Array เริ่มที่ 0)
-        customerAudio.src = customerReplies[turn - 1];
-        customerAudio.play();
+                } catch (err) {
+                    status.textContent = `❌ ข้อผิดพลาดในการเข้าถึงไมโครโฟน: ${err.name}. โปรดตรวจสอบสิทธิ์การใช้งาน.`;
+                    console.error("Microphone access error:", err);
+                }
 
-        status.textContent = `🔊 กำลังเล่นเสียงลูกค้าโต้ตอบ (${turn}/${maxTurns})...`;
+            } else {
+                // หยุดบันทึก (จะไปทำงานใน mediaRecorder.onstop ซึ่งจะเรียก endTurn() ต่อ)
+                mediaRecorder.stop();
+            }
+        }
 
-        // 4. เมื่อเสียงลูกค้าจบ ให้เปิดปุ่มบันทึกอีกครั้ง
-        customerAudio.onended = () => {
-            if (turn < maxTurns) { // ถ้ายังไม่จบบทสนทนา
-                status.textContent = `🎤 พร้อมบันทึกเสียงโต้ตอบของพนักงาน (เทิร์นที่ ${turn + 1})`;
-                recordBtn.disabled = false;
-            } else { // จบบทสนทนาทั้งหมดแล้ว
+        function endTurn() {
+            if (turn < maxTurns) {
+                turn++; // เพิ่มเทิร์นเพื่อไปใช้ไฟล์เสียงของลูกค้า
+                turnSpan.textContent = turn;
+                status.textContent = `⏳ กำลังโหลดเสียงลูกค้าโต้ตอบ (${turn}/${maxTurns})...`;
+
+                // 1. ตั้งค่าและโหลดแหล่งที่มาใหม่
+                customerAudio.src = customerReplies[turn - 1];
+                customerAudio.load(); 
+
+                // 2. รอจนกว่าเบราว์เซอร์จะพร้อมเล่น
+                customerAudio.oncanplaythrough = () => {
+                    status.textContent = `🔊 กำลังเล่นเสียงลูกค้าโต้ตอบ (${turn}/${maxTurns})...`;
+                    
+                    // 3. เริ่มเล่นเมื่อพร้อม (ใช้ .catch เพื่อจัดการ Autoplay Policy)
+                    customerAudio.play()
+                        .catch(error => {
+                            status.textContent = `❌ ข้อผิดพลาดในการเล่นอัตโนมัติ: ${error.message}. กรุณาลองกดเริ่มบันทึกเสียงพนักงานอีกครั้ง`;
+                            recordBtn.disabled = false; // เปิดให้เริ่มบันทึกใหม่
+                        });
+                };
+
+                // 4. เมื่อเสียงลูกค้าจบ ให้เปิดปุ่มบันทึกอีกครั้ง
+                customerAudio.onended = () => {
+                    customerAudio.oncanplaythrough = null; 
+                    customerAudio.onended = null;
+                    
+                    if (turn < maxTurns) { // ถ้ายังไม่จบบทสนทนา
+                        status.textContent = `🎤 พร้อมบันทึกเสียงโต้ตอบของพนักงาน (เทิร์นที่ ${turn + 1})`;
+                        recordBtn.disabled = false;
+                    } else { // จบบทสนทนาทั้งหมดแล้ว
+                        status.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสายแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`;
+                        nextRoundBtn.disabled = false;
+                        recordBtn.disabled = true;
+                    }
+                };
+            } else {
+                // กรณีที่จบบทสนทนาทั้งหมดแล้ว
                 status.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสายแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`;
                 nextRoundBtn.disabled = false;
+                recordBtn.disabled = true;
             }
-        };
-    } else {
-        // กรณีที่ไม่ควรเกิดขึ้นหากโค้ดทำงานถูกต้อง แต่เป็น Safety Net
-        status.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสายแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`;
-        nextRoundBtn.disabled = false;
-        recordBtn.disabled = true;
-    }
-}
+        }
 
-function nextRound() {
-    // ในที่นี้เราจะข้ามไปช่วงที่ 2 เลย (ตามโค้ดเดิม)
-    // สำหรับการใช้งานจริง ควรจะนำฟังก์ชัน ช่วงที่ 2 มาใส่ตรงนี้
-    status.textContent = "🎉 เสร็จสิ้นช่วงเปิดตัวแล้ว! ไปต่อช่วงที่ 2";
-    recordBtn.disabled = true;
-    endTurnBtn.disabled = true;
-    nextRoundBtn.disabled = true;
-}
+        function nextRound() {
+            // ฟังก์ชันสำหรับไปช่วงที่ 2 (สมมติว่าช่วงที่ 2/3 ยังใช้โค้ดเดิม)
+            alert("จบบทที่ 1 แล้ว! สามารถดำเนินการต่อในช่วงที่ 2 ได้");
+            // ในการใช้งานจริง โค้ดควรจะล้างสถานะของช่วงที่ 1 และเปิดใช้งานช่วงที่ 2
+        }
 
-// ***หมายเหตุ: โค้ดส่วนที่ 2 และ 3 ของเดิมไม่ได้ถูกรวมไว้เพื่อความกระชับ แต่สามารถนำกลับมาใส่ได้
-</script></body>
+
+        // ------------------
+        // โค้ดเดิมสำหรับ ช่วงที่ 2, 3 และ ใบประกาศ (ยังคงฟังก์ชันการทำงานไว้)
+        // ------------------
+
+        // [คัดลอกโค้ด JavaScript ส่วนที่ 2, 3, และ ใบประกาศ จากโค้ดต้นฉบับมาวางตรงนี้]
+        
+        // ... (สมมติว่าโค้ดส่วนอื่น ๆ ถูกวางไว้ตรงนี้) ...
+        
+        // ช่วงที่ 2
+        const questionFiles = ["audio/q1.mp3","audio/q2.mp3","audio/q3.mp3","audio/q4.mp3","audio/q5.mp3","audio/q6.mp3","audio/q7.mp3","audio/q8.mp3","audio/q9.mp3","audio/q10.mp3"];
+        let qRound = 1;
+        const maxQ = 10;
+        const qRoundSpan = document.getElementById("qRound");
+        const qStatus = document.getElementById("qStatus");
+        const answerBtn = document.getElementById("answerBtn");
+        const nextQBtn = document.getElementById("nextQBtn");
+        const questionAudio = document.getElementById("questionAudio");
+        let qRecorder;
+        let qChunks = [];
+
+        function playRandomQuestion() {
+            const selectedFile = questionFiles[Math.floor(Math.random() * questionFiles.length)];
+            questionAudio.src = selectedFile;
+            questionAudio.play();
+            qStatus.textContent = "🔊 กำลังเล่นคำถาม...";
+            answerBtn.disabled = true;
+            questionAudio.onended = () => {
+                qStatus.textContent = "🎤 พร้อมบันทึกคำตอบ";
+                answerBtn.disabled = false;
+            };
+        }
+
+        async function toggleAnswerRecording() {
+            if (!qRecorder || qRecorder.state === "inactive") {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                qRecorder = new MediaRecorder(stream);
+                qRecorder.ondataavailable = e => qChunks.push(e.data);
+                qRecorder.onstop = () => {
+                    const blob = new Blob(qChunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `answer_q${qRound}.webm`;
+                    a.click();
+                    qChunks = [];
+                };
+                qRecorder.start();
+                qStatus.textContent = "🔴 กำลังบันทึกคำตอบ...";
+                answerBtn.textContent = "⏹️ หยุดบันทึก";
+                nextQBtn.disabled = true;
+            } else {
+                qRecorder.stop();
+                qStatus.textContent = "✅ บันทึกเสร็จแล้ว";
+                answerBtn.textContent = "🎙️ เริ่มบันทึกคำตอบ";
+                nextQBtn.disabled = false;
+            }
+        }
+
+        function nextQuestion() {
+            if (qRound < maxQ) {
+                qRound++;
+                qRoundSpan.textContent = qRound;
+                qStatus.textContent = "ยังไม่เริ่ม";
+                nextQBtn.disabled = true;
+                answerBtn.disabled = true;
+            } else {
+                qStatus.textContent = "🎉 เสร็จสิ้นช่วงตอบคำถามแล้ว!";
+                answerBtn.disabled = true;
+                nextQBtn.disabled = true;
+            }
+        }
+
+        // ช่วงที่ 3
+        const objectionFiles = ["audio/obj1.mp3","audio/obj2.mp3","audio/obj3.mp3","audio/obj4.mp3","audio/obj5.mp3"];
+        let cRound = 1;
+        const maxC = 5;
+        const cRoundSpan = document.getElementById("cRound");
+        const cStatus = document.getElementById("cStatus");
+        const closeBtn = document.getElementById("closeBtn");
+        const showObjectionBtn = document.getElementById("showObjectionBtn");
+        const replyBtn = document.getElementById("replyBtn");
+        const nextCBtn = document.getElementById("nextCBtn");
+        const objectionAudio = document.getElementById("objectionAudio");
+        let closeRecorder, replyRecorder;
+        let closeChunks = [], replyChunks = [];
+
+        async function toggleCloseRecording() {
+            if (!closeRecorder || closeRecorder.state === "inactive") {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                closeRecorder = new MediaRecorder(stream);
+                closeRecorder.ondataavailable = e => closeChunks.push(e.data);
+                closeRecorder.onstop = () => {
+                    const blob = new Blob(closeChunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `close_sale_${cRound}.webm`;
+                    a.click();
+                    closeChunks = [];
+                    showObjectionBtn.disabled = false;
+                };
+                closeRecorder.start();
+                cStatus.textContent = "🔴 กำลังบันทึกสคริปต์ปิดการขาย...";
+                closeBtn.textContent = "⏹️ หยุดบันทึก";
+            } else {
+                closeRecorder.stop();
+                cStatus.textContent = "✅ บันทึกสคริปต์เสร็จแล้ว";
+                closeBtn.textContent = "🎙️ บันทึกสคริปต์ปิดการขาย";
+            }
+        }
+
+        function playRandomObjection() {
+            const selectedFile = objectionFiles[Math.floor(Math.random() * objectionFiles.length)];
+            objectionAudio.src = selectedFile;
+            objectionAudio.play();
+            cStatus.textContent = "🔊 กำลังเล่นข้อโต้แย้ง...";
+            replyBtn.disabled = true;
+            objectionAudio.onended = () => {
+                cStatus.textContent = "🎤 พร้อมบันทึกเสียงตอบกลับ";
+                replyBtn.disabled = false;
+            };
+        }
+
+        async function toggleReplyRecording() {
+            if (!replyRecorder || replyRecorder.state === "inactive") {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                replyRecorder = new MediaRecorder(stream);
+                replyRecorder.ondataavailable = e => replyChunks.push(e.data);
+                replyRecorder.onstop = () => {
+                    const blob = new Blob(replyChunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `reply_obj_${cRound}.webm`;
+                    a.click();
+                    replyChunks = [];
+                    nextCBtn.disabled = false;
+                };
+                replyRecorder.start();
+                cStatus.textContent = "🔴 กำลังบันทึกเสียงตอบกลับ...";
+                replyBtn.textContent = "⏹️ หยุดบันทึก";
+            } else {
+                replyRecorder.stop();
+                cStatus.textContent = "✅ บันทึกเสร็จแล้ว";
+                replyBtn.textContent = "🎙️ บันทึกเสียงตอบข้อโต้แย้ง";
+            }
+        }
+
+        function nextCloseRound() {
+            if (cRound < maxC) {
+                cRound++;
+                cRoundSpan.textContent = cRound;
+                cStatus.textContent = "ยังไม่เริ่ม";
+                showObjectionBtn.disabled = true;
+                replyBtn.disabled = true;
+                nextCBtn.disabled = true;
+            } else {
+                cStatus.textContent = "🎓 เสร็จสิ้นแบบทดสอบทั้งหมด! เตรียมแสดงใบประกาศ...";
+                closeBtn.disabled = true;
+                showObjectionBtn.disabled = true;
+                replyBtn.disabled = true;
+                nextCBtn.disabled = true;
+                document.getElementById("certificate").style.display = "block";
+            }
+        }
+
+        // ใบประกาศ
+        function generateCertificate() {
+            const name = prompt("กรุณากรอกชื่อพนักงาน:");
+            if (name) {
+                document.getElementById("traineeName").textContent = name;
+                const today = new Date().toLocaleDateString('th-TH', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+                document.getElementById("issueDate").textContent = today;
+                document.getElementById("certificate").scrollIntoView({ behavior: "smooth" });
+            }
+        }
+
+    </script>
+</body>
 </html>
