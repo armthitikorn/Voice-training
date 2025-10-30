@@ -4,455 +4,6 @@
     <meta charset="utf-8"/>
     <title>แบบทดสอบการขายประกันทางโทรศัพท์ (อัปโหลด Supabase ไฟล์เดียว) - ฉบับใช้งานจริง</title>
     
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-        import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
-        
-        // --- 1. Supabase Config (ต้องกำหนดเป็น Global เพื่อให้ฟังก์ชันอื่นใช้ได้) ---
-        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
-        window.supabase = createClient(supabaseUrl, supabaseKey); // ⚠️ ทำให้เป็น Global
-
-        // --- 2. Global Variables (ต้องกำหนดเป็น Global เพื่อให้ Event Listener เข้าถึงได้) ---
-        window.masterAudioChunks = [];
-        window.mediaRecorder = null;
-        window.currentUserId = null; 
-        const USER_ID_KEY = 'roleplay_user_id'; 
-        
-        // Element References (ทำให้เป็น Global เพื่อความสะดวก)
-        window.inputUserName = document.getElementById('inputUserName'); 
-        window.turnSpan = document.getElementById("turnSpan");
-        window.status = document.getElementById("status");
-        window.recordBtn = document.getElementById("recordBtn");
-        window.nextRoundBtn = document.getElementById("nextRoundBtn");
-        window.customerAudio = document.getElementById("customerAudio");
-        window.qRoundSpan = document.getElementById("qRound");
-        window.qStatus = document.getElementById("qStatus");
-        window.startQBtn = document.getElementById("startQBtn");
-        window.answerBtn = document.getElementById("answerBtn");
-        window.nextSection3Btn = document.getElementById("nextSection3Btn");
-        window.questionAudio = document.getElementById("questionAudio");
-        window.cRoundSpan = document.getElementById("cRound");
-        window.cStatus = document.getElementById("cStatus");
-        window.closeBtn = document.getElementById("closeBtn");
-        window.replyBtn = document.getElementById("replyBtn");
-        window.objectionAudio = document.getElementById("objectionAudio");
-        window.saveAllBtn = document.getElementById("saveAllBtn");
-        window.loadingOverlay = document.getElementById("loadingOverlay");
-        window.loadingText = document.getElementById("loadingText");
-        window.uploadProgressBar = document.getElementById("uploadProgressBar"); 
-
-        // State Variables
-        let turn = 0; 
-        const maxTurns = 5;
-        let qRound = 0;
-        const maxQ = 10;
-        let cRound = 0;
-        const maxC = 5;
-        
-        // Audio Files (URL ของคุณ)
-        const allCustomerReplies = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q1_fe75e00d-70f8-429a-806f-ae77f5cde2de.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q2_a68fb010-ec6c-47c2-95b2-d839553fe4e7.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q3_d974acce-1bc1-4473-a9f6-d49a256636ab.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q4_c3dd3875-fac4-4ad0-96d7-31adf9175c69.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q5_60ca36aa-3425-4824-987a-ff6b7fd7dbe1.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q6_75f89f58-d31d-4edb-a47d-901d0dfc92d4.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q7_490b0134-6446-4708-b86c-785d31306d07.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q8_ad281257-c3b9-44dd-8ca5-0f383d438003.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q10_68208219-7f94-48be-8446-d296d03711a3.webm"
-        ];
-        const questionFiles = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q1_426c99f9-e6cc-45d9-995a-04ea50effbea.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q2_512d6ed6-44bd-446b-a12b-8d664dfa6b68.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q3_2ba969e1-7421-41b9-823b-b6115eaf4711.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q4_52a4b384-ccd6-4e6c-86ef-e2b33f9a7c7e.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q5_36097a2d-20e3-4fef-bcf9-807076a90e3b.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q6_3dee5223-9b49-4976-93fa-7b0ed28b111e.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q7_e3bd2454-ca23-4519-bc65-503a28d5b27a.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q8_681b20de-322f-4fc6-8b50-ecd37e265ea6.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q9_a270c910-9a77-42a0-a2cc-7eaab6044f08.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q10_ed542cc5-bf90-4326-b296-21b88ef6334d.webm"
-        ];
-        const objectionFiles = [
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q1_cc419767-be8d-4131-a96c-9ebd05e17c0f.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q2_6c651abe-e8ce-4cc9-9393-4e8e3c0ab007.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q3_6eb4b44a-a1cb-42ff-a48e-12ecd0105b16.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q4_f6cfdb31-8c1a-4a10-9eaa-31adeff615bb.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q5_b126f965-079b-4f50-8818-4ea124cded47.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q6_6e6df3ec-2a70-44b9-ba6d-0f28f6650c51.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q7_1bd79b02-b363-4004-80f4-fcc2936fe8ec.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q8_0cca5181-e7e9-4635-914b-050430144c8c.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm",
-            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q10_fbba463f-b3a5-4671-a018-006d457ccd6b.webm"
-        ];
-        
-        // Data Pools (ต้องกำหนดเป็น Global เพื่อให้ฟังก์ชันเข้าถึงได้)
-        window.randomObjectionsPool = allCustomerReplies.slice(1, 9);
-        window.fixedFirstObjection = allCustomerReplies[0];
-        window.finalObjection = allCustomerReplies[9]; 
-        window.selectedRandomFiles = [];
-        window.questionPool = [...questionFiles];
-        window.objectionPool = [...objectionFiles];
-
-        // --- 3. ฟังก์ชันหลัก (Shared Utility) ---
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-        window.shuffle = shuffle; // ทำให้เข้าถึงได้ Global
-
-        // --- 4. ฟังก์ชันบันทึกเสียง (รวมทุกช่วง) ---
-        window.toggleRecording = async function(type) {
-            let statusElement, buttonElement, nextAutoAction;
-
-            if (type === 3) { // บันทึกสคริปต์ปิดการขาย
-                statusElement = window.cStatus; 
-                buttonElement = window.closeBtn; 
-                nextAutoAction = window.playRandomObjectionAuto; 
-            } else if (type === 4) { // บันทึกเสียงตอบข้อโต้แย้ง
-                statusElement = window.cStatus; 
-                buttonElement = window.replyBtn; 
-                nextAutoAction = window.startNextCloseRoundAuto; 
-            }
-            else if (type === 1) { statusElement = window.status; buttonElement = window.recordBtn; nextAutoAction = window.endTurn; }
-            else if (type === 2) { statusElement = window.qStatus; buttonElement = window.answerBtn; nextAutoAction = window.playRandomQuestion; }
-            
-
-            if (!window.mediaRecorder || window.mediaRecorder.state === "inactive") {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    
-                    window.mediaRecorder = new MediaRecorder(stream);
-                    window.mediaRecorder.ondataavailable = e => { 
-                        if (e.data.size > 0) window.masterAudioChunks.push(e.data);
-                    };
-
-                    window.mediaRecorder.onstop = () => {
-                        statusElement.textContent = "✅ หยุดบันทึกแล้ว - กำลังรอการโต้ตอบถัดไป...";
-                        buttonElement.textContent = "🎙️ เริ่มบันทึกเสียง";
-                        
-                        stream.getTracks().forEach(track => track.stop());
-                        
-                        buttonElement.disabled = true;
-                        nextAutoAction(); 
-                    };
-                    
-                    window.mediaRecorder.start();
-                    statusElement.textContent = "🔴 กำลังบันทึกเสียง...";
-                    
-                    if (type === 3) buttonElement.textContent = "⏹️ หยุดบันทึกสคริปต์ปิดการขาย";
-                    else if (type === 4) buttonElement.textContent = "⏹️ หยุดบันทึกเสียงตอบข้อโต้แย้ง";
-                    else buttonElement.textContent = "⏹️ หยุดบันทึก";
-
-                    if (type === 1) window.nextRoundBtn.disabled = true;
-                    if (type === 2) window.nextSection3Btn.disabled = true;
-                    
-                } catch (err) {
-                    statusElement.textContent = `❌ ข้อผิดพลาดในการเข้าถึงไมโครโฟน: ${err.name}. โปรดตรวจสอบสิทธิ์.`;
-                }
-
-            } else {
-                window.mediaRecorder.stop();
-            }
-        }
-        
-        // --- 5. ฟังก์ชันช่วงที่ 1 ---
-        window.prepareTurnFiles = function() {
-            window.selectedRandomFiles = [window.fixedFirstObjection];
-            window.shuffle(window.randomObjectionsPool);
-            const threeRandom = window.randomObjectionsPool.slice(0, 3);
-            window.selectedRandomFiles.push(...threeRandom);
-            window.selectedRandomFiles.push(window.finalObjection);
-        }
-
-        window.endTurn = function() {
-            if (turn < maxTurns) {
-                turn++;
-                window.turnSpan.textContent = turn;
-                
-                const isFinalTurn = (turn === maxTurns);
-                const fileToPlay = window.selectedRandomFiles[turn - 1];
-                window.status.textContent = `⏳ กำลังโหลดเสียงลูกค้า...`;
-
-                window.customerAudio.src = fileToPlay;
-                window.customerAudio.load(); 
-
-                window.customerAudio.oncanplaythrough = () => {
-                    window.status.textContent = `🔊 กำลังเล่นเสียงลูกค้า (${turn}/${maxTurns})...`;
-                    window.customerAudio.play().catch(error => {
-                            window.status.textContent = `❌ เล่นอัตโนมัติถูกบล็อก: ${error.message}. กรุณากดเริ่มบันทึกเสียงพนักงานอีกครั้ง`;
-                            window.recordBtn.disabled = false;
-                        });
-                };
-
-                window.customerAudio.onended = () => {
-                    window.customerAudio.oncanplaythrough = null; 
-                    window.customerAudio.onended = null;
-                    
-                    if (turn < maxTurns) { 
-                        window.status.textContent = `🎤 พร้อมบันทึกเสียงโต้ตอบของพนักงาน (เทิร์นที่ ${turn + 1})`;
-                        window.recordBtn.disabled = false;
-                    } else {
-                        window.status.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสาย 5 ข้อแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`;
-                        window.nextRoundBtn.disabled = false;
-                        window.recordBtn.disabled = true;
-                    }
-                };
-            } else {
-                window.status.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสาย 5 ข้อแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`;
-                window.nextRoundBtn.disabled = false;
-                window.recordBtn.disabled = true;
-            }
-        }
-
-        window.initSection2 = function() {
-            window.nextRoundBtn.disabled = true;
-            window.recordBtn.disabled = true;
-            window.startQBtn.disabled = false;
-            window.nextSection3Btn.disabled = true;
-            qRound = 0; 
-            window.questionPool = [...questionFiles];
-            window.qStatus.textContent = "✅ ช่วงที่ 1 เสร็จสิ้น! กด 'เริ่มคำถามลูกค้า' เพื่อเริ่มช่วงที่ 2";
-            alert("จบบทที่ 1 แล้ว! เริ่มช่วงที่ 2: ตอบคำถามลูกค้า");
-        }
-
-        // --- 6. ฟังก์ชันช่วงที่ 2 ---
-        window.playRandomQuestion = function() {
-            if (qRound >= maxQ) {
-                window.qStatus.textContent = "🎉 คำถามครบ 10 ข้อแล้ว! กรุณากด 'จบบทที่ 2' เพื่อไปช่วงที่ 3";
-                window.nextSection3Btn.disabled = false;
-                window.startQBtn.disabled = true;
-                window.answerBtn.disabled = true;
-                return;
-            }
-            
-            qRound++;
-            window.qRoundSpan.textContent = qRound;
-            
-            if (window.questionPool.length === 0) return;
-            
-            const randomIndex = Math.floor(Math.random() * window.questionPool.length);
-            const selectedFile = window.questionPool[randomIndex];
-            window.questionPool.splice(randomIndex, 1);
-            
-            window.questionAudio.src = selectedFile;
-            window.questionAudio.load();
-
-            window.qStatus.textContent = "⏳ กำลังโหลดคำถามลูกค้า...";
-            window.startQBtn.disabled = true;
-            window.answerBtn.disabled = true;
-
-            window.questionAudio.oncanplaythrough = () => {
-                window.questionAudio.play();
-                window.qStatus.textContent = `🔊 กำลังเล่นคำถามที่ ${qRound}/${maxQ}...`;
-            };
-            
-            window.questionAudio.onended = () => {
-                window.qStatus.textContent = "🎤 พร้อมบันทึกคำตอบ";
-                window.answerBtn.disabled = false;
-                if (qRound === 1) window.startQBtn.style.display = 'none';
-            };
-        }
-
-        window.initSection3 = function() {
-            window.nextSection3Btn.disabled = true;
-            window.startQBtn.disabled = true;
-            window.answerBtn.disabled = true;
-            window.closeBtn.disabled = false; 
-            window.replyBtn.disabled = true; 
-            cRound = 0;
-            window.objectionPool = [...objectionFiles];
-            window.closeBtn.style.display = 'block'; 
-            window.cStatus.textContent = "✅ ช่วงที่ 2 เสร็จสิ้น! กด '1. บันทึกสคริปต์ปิดการขาย' เพื่อเริ่มรอบปิดการขาย";
-            alert("จบบทที่ 2 แล้ว! เริ่มช่วงที่ 3: ปิดการขาย (5 รอบ)");
-        }
-
-
-        // --- 7. ฟังก์ชันช่วงที่ 3 (Auto-Flow) ---
-        window.playRandomObjectionAuto = function() {
-            cRound++;
-            window.cRoundSpan.textContent = cRound;
-
-            if (cRound > maxC) {
-                window.cStatus.textContent = "🎉 เสร็จสิ้นแบบทดสอบทั้งหมด! กรุณากด '💾 บันทึกไฟล์เสียงทั้งหมด'";
-                window.replyBtn.disabled = true;
-                window.closeBtn.style.display = 'none'; 
-                window.saveAllBtn.disabled = false;
-                return;
-            }
-
-            if(cRound === 1) window.closeBtn.style.display = 'none';
-            
-            if (window.objectionPool.length === 0) return;
-            
-            const randomIndex = Math.floor(Math.random() * window.objectionPool.length);
-            const selectedFile = window.objectionPool[randomIndex];
-            window.objectionPool.splice(randomIndex, 1);
-
-            window.objectionAudio.src = selectedFile;
-            window.objectionAudio.load();
-
-            window.replyBtn.disabled = true;
-            window.cStatus.textContent = `⏳ กำลังโหลดข้อโต้แย้งลูกค้า (รอบที่ ${cRound}/${maxC})...`;
-
-            window.objectionAudio.oncanplaythrough = () => {
-                window.objectionAudio.play();
-                window.cStatus.textContent = `🔊 กำลังเล่นข้อโต้แย้งลูกค้า (รอบที่ ${cRound}/${maxC})...`;
-            };
-
-            window.objectionAudio.onended = () => {
-                window.cStatus.textContent = "🎤 พร้อมบันทึกเสียงตอบกลับข้อโต้แย้ง";
-                window.replyBtn.disabled = false;
-                window.replyBtn.textContent = `🎙️ ${cRound === maxC ? '5. บันทึกเสียงตอบข้อโต้แย้งสุดท้าย' : (cRound + 1) + '. บันทึกเสียงตอบข้อโต้แย้ง'}`;
-            };
-        }
-        
-        window.startNextCloseRoundAuto = function() {
-            if (cRound < maxC) {
-                window.cStatus.textContent = "✅ บันทึกเสร็จสิ้น! ข้อโต้แย้งลูกค้าถัดไปกำลังจะเริ่ม...";
-                setTimeout(window.playRandomObjectionAuto, 1500);
-            } else {
-                window.cStatus.textContent = "🎉 เสร็จสิ้นแบบทดสอบทั้งหมด! กรุณากด '💾 บันทึกไฟล์เสียงทั้งหมด'";
-                window.replyBtn.disabled = true;
-                window.closeBtn.style.display = 'none';
-                window.saveAllBtn.disabled = false;
-            }
-        }
-
-        // --- 8. ฟังก์ชันอัปโหลดและบันทึกไฟล์เดียว ---
-        window.uploadFinalRecording = async function(audioBlob) {
-            if (!window.currentUserId) { throw new Error("ไม่พบรหัสผู้ใช้งาน กรุณาโหลดหน้าใหม่"); }
-            
-            const userName = window.inputUserName.value.trim() ||
-                `ผู้ใช้งาน ID: ${window.currentUserId.substring(0, 8)}...`;
-            
-            window.loadingOverlay.style.display = "flex";
-            window.loadingText.textContent = `กำลังอัปโหลดไฟล์ขนาด ${(audioBlob.size / (1024 * 1024)).toFixed(2)} MB...`;
-
-            try {
-                const fileName = `${window.currentUserId}/final/full_session_${uuidv4()}.webm`;
-                
-                // 1. Upload file to Supabase Storage
-                const { error: uploadError } = await window.supabase.storage
-                    .from('responses') 
-                    .upload(fileName, audioBlob, { upsert: false });
-          
-                if (uploadError) { throw uploadError; }
-
-                // 2. Get Public URL
-                const { data: { publicUrl } } = window.supabase.storage.from('responses').getPublicUrl(fileName);
-
-                // 3. Insert record into Supabase Database
-                window.loadingText.textContent = `กำลังบันทึกข้อมูลลงฐานข้อมูล...`;
-                const { error: insertError } 
-                    = await window.supabase
-                    .from('submissions') 
-                    .insert([
-                        {
-                            user_id: window.currentUserId,
-                            name: userName, 
-                            email: `anon_${window.currentUserId}@roleplay.com`, 
-                            part_number: 99, 
-                            question_number: 0,
-                            question_text: "Final Full Roleplay Session (Part 1-3 Combined)",
-                            audio_url: publicUrl,
-                            duration_seconds: audioBlob.size > 0 ? (audioBlob.size / 100000) : 0 
-                        }
-                    ]);
-                if (insertError) { throw insertError; }
-
-                window.loadingText.textContent = `✅ อัปโหลดเสร็จสมบูรณ์!`;
-                window.uploadProgressBar.style.width = `100%`;
-                window.uploadProgressBar.classList.add('progress-bar-done');
-                return true;
-            } catch (err) {
-                console.error('เกิดข้อผิดพลาดในการอัปโหลด:', err);
-                alert(`เกิดข้อผิดพลาดในการอัปโหลด: ${err.message}. โปรดตรวจสอบ Internet/RLS.`);
-                return false;
-            } finally {
-                setTimeout(() => { window.loadingOverlay.style.display = "none"; }, 1000);
-            }
-        }
-
-
-        window.saveAllRecordings = function() {
-            if (window.masterAudioChunks.length === 0) {
-                alert("ไม่มีไฟล์เสียงบันทึกไว้! โปรดตรวจสอบว่าคุณได้กด 'เริ่มบันทึก' และ 'หยุดบันทึก' ในทุกเทิร์นแล้ว");
-                return;
-            }
-            if (!window.inputUserName.value.trim()) {
-                 alert("กรุณากรอกชื่อ-นามสกุล/รหัสพนักงานก่อนทำการบันทึกและอัปโหลด");
-                 window.inputUserName.focus();
-                 return;
-            }
-            
-            window.saveAllBtn.disabled = true;
-            window.saveAllBtn.textContent = "⏳ กำลังรวมและอัปโหลดไฟล์...";
-            
-            const audioBlob = new Blob(window.masterAudioChunks, { type: 'audio/webm' }); 
-            
-            window.uploadFinalRecording(audioBlob).then(success => {
-                if (success) {
-                    window.saveAllBtn.textContent = "✅ อัปโหลดไฟล์เสียงรวมเสร็จสิ้น!";
-                    window.saveAllBtn.classList.add('done');
-                    window.generateCertificate();
-                } else {
-                     window.saveAllBtn.disabled = false;
-                     window.saveAllBtn.textContent = "❌ อัปโหลดล้มเหลว ลองอีกครั้ง";
-                }
-            });
-        }
-        
-        // --- 9. ใบประกาศ ---
-        window.generateCertificate = function() {
-            const name = prompt("กรุณากรอกชื่อพนักงาน (สำหรับใบประกาศ):");
-            if (name) {
-                document.getElementById("traineeName").textContent = name;
-                const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-                document.getElementById("issueDate").textContent = today;
-                document.getElementById("certificate").style.display = "block";
-                document.getElementById("certificate").scrollIntoView({ behavior: "smooth" });
-            }
-        }
-
-
-        // --- 10. Initialization และ Event Listeners ---
-        function initializeUser() {
-            let userId = localStorage.getItem(USER_ID_KEY);
-            if (!userId) {
-                userId = uuidv4();
-                localStorage.setItem(USER_ID_KEY, userId);
-            }
-            window.currentUserId = userId;
-            window.prepareTurnFiles(); 
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeUser();
-
-            // ⚠️ FIX: ผูก Event Listener สำหรับปุ่มบันทึกเสียงทั้งหมด
-            window.recordBtn.addEventListener('click', () => window.toggleRecording(1));
-            window.answerBtn.addEventListener('click', () => window.toggleRecording(2));
-            window.closeBtn.addEventListener('click', () => window.toggleRecording(3));
-            window.replyBtn.addEventListener('click', () => window.toggleRecording(4));
-
-            // ผูก Event สำหรับปุ่ม Flow Control
-            window.nextRoundBtn.addEventListener('click', window.initSection2);
-            window.nextSection3Btn.addEventListener('click', window.initSection3);
-            window.startQBtn.addEventListener('click', window.playRandomQuestion);
-            window.saveAllBtn.addEventListener('click', window.saveAllRecordings);
-            document.querySelector('[onclick="generateCertificate()"]').addEventListener('click', window.generateCertificate);
-            
-            // Note: inputUserName.value จะถูกใช้ใน saveAllRecordings() 
-        });
-        
-    </script>
-
-
     <style>
         body { font-family: 'TH Sarabun New', sans-serif; padding: 20px; }
         button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
@@ -481,14 +32,27 @@
         .spinner-border {
             width: 3rem;
             height: 3rem;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+        }
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
         }
         .progress {
             width: 80%;
             max-width: 400px;
             margin-top: 20px;
+            height: 15px;
+            background-color: #e9ecef;
+            border-radius: 0.25rem;
+            overflow: hidden;
         }
         .progress-bar {
+            height: 100%;
             background-color: #007bff;
+            transition: width 0.6s ease;
         }
         .form-control {
             padding: 8px;
@@ -507,8 +71,8 @@
             <span class="visually-hidden">Loading...</span>
         </div>
         <h5 id="loadingText" class="mt-3">กำลังเตรียมการอัปโหลดไฟล์เสียงรวม...</h5>
-        <div class="progress" role="progressbar" aria-label="Upload Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+        <div class="progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <div id="uploadProgressBar" class="progress-bar" style="width: 0%"></div>
         </div>
     </div>
 
@@ -525,26 +89,26 @@
         <h2 id="section1Title">🗣️ ช่วงที่ 1: เปิดตัว/โต้ตอบต้นสาย (เทิร์นที่ <span id="turnSpan">1</span>/5)</h2>
         <audio id="customerAudio" src=""></audio>
         <button id="recordBtn">🎙️ เริ่มบันทึกเสียง (พนักงาน)</button>
-        <button disabled="" id="nextRoundBtn">✅ จบบทที่ 1 (ไปช่วงที่ 2)</button>
+        <button disabled id="nextRoundBtn">✅ จบบทที่ 1 (ไปช่วงที่ 2)</button>
         <p id="status">รอเริ่มบันทึกบทพูดเปิดตัว</p>
         <hr>
 
         <h2>❓ ช่วงที่ 2: ตอบคำถามลูกค้า (รอบที่ <span id="qRound">1</span>/10)</h2>
         <audio id="questionAudio"></audio>
         <button disabled id="startQBtn">🔊 เริ่มคำถามลูกค้า</button>
-        <button disabled="" id="answerBtn">🎙️ เริ่มบันทึกคำตอบ</button>
-        <button disabled="" id="nextSection3Btn">✅ จบบทที่ 2 (ไปช่วงที่ 3)</button>
+        <button disabled id="answerBtn">🎙️ เริ่มบันทึกคำตอบ</button>
+        <button disabled id="nextSection3Btn">✅ จบบทที่ 2 (ไปช่วงที่ 3)</button>
         <p id="qStatus">รอเริ่มช่วงที่ 2</p>
         <hr>
 
         <h2>💰 ช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง (รอบที่ <span id="cRound">1</span>/5)</h2>
         <button disabled id="closeBtn">🎙️ 1. บันทึกสคริปต์ปิดการขาย</button>
         <audio id="objectionAudio"></audio>
-        <button disabled="" id="replyBtn">🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง</button>
+        <button disabled id="replyBtn">🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง</button>
         <p id="cStatus">รอเริ่มช่วงที่ 3</p>
         
         <div style="margin-top: 20px;">
-            <button disabled="" id="saveAllBtn">💾 บันทึกไฟล์เสียงทั้งหมดและอัปโหลด</button>
+            <button disabled id="saveAllBtn">💾 บันทึกไฟล์เสียงทั้งหมดและอัปโหลด</button>
         </div>
         <hr>
 
@@ -554,12 +118,196 @@
             <h2 id="traineeName">[ชื่อพนักงาน]</h2>
             <p>เพื่อแสดงว่าได้ผ่านการทดสอบ</p>
             <p><strong>หลักสูตรการขายประกันทางโทรศัพท์</strong></p>
-            <p>ซึ่งประกอบด้วยการพูดเปิดตัว, การตอบคำถามลูกค้า, และการปิดการขายพร้อมตอบข้อโต้แย้ง</p>
             <p style="margin-top: 40px;">ลงชื่อ....................................................</p>
             <p>(หัวหน้าฝึกอบรม)</p>
             <p style="margin-top: 20px;">วันที่ออกใบประกาศ: <span id="issueDate"></span></p>
         </div>
-        <button>🎓 แสดงใบประกาศ</button>
+        <button id="certBtn">🎓 แสดงใบประกาศ</button>
     </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        import { v4 as uuidv4 } from 'https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/esm-browser/index.js';
+        
+        // --- 1. Supabase Config & Global State ---
+        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
+        window.supabase = createClient(supabaseUrl, supabaseKey);
+
+        // State Variables (ถูกนำไปใช้ร่วมกับ DOM Elements)
+        let masterAudioChunks = [];
+        let mediaRecorder = null;
+        let currentUserId = null; 
+        const USER_ID_KEY = 'roleplay_user_id'; 
+        let turn = 0; 
+        const maxTurns = 5;
+        let qRound = 0;
+        const maxQ = 10;
+        let cRound = 0;
+        const maxC = 5;
+
+        // DOM Element Variables (ประกาศเฉยๆ)
+        let inputUserName, turnSpan, status, recordBtn, nextRoundBtn, customerAudio, qRoundSpan, qStatus, startQBtn, answerBtn, nextSection3Btn, questionAudio, cRoundSpan, cStatus, closeBtn, replyBtn, objectionAudio, saveAllBtn, loadingOverlay, loadingText, uploadProgressBar, certBtn;
+
+        // ... (Audio Files URL และ Data Pools เหมือนเดิม) ...
+        const allCustomerReplies = [
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q1_fe75e00d-70f8-429a-806f-ae77f5cde2de.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q2_a68fb010-ec6c-47c2-95b2-d839553fe4e7.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q3_d974acce-1bc1-4473-a9f6-d49a256636ab.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q4_c3dd3875-fac4-4ad0-96d7-31adf9175c69.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q5_60ca36aa-3425-4824-987a-ff6b7fd7dbe1.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q6_75f89f58-d31d-4edb-a47d-901d0dfc92d4.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q7_490b0134-6446-4708-b86c-785d31306d07.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q8_ad281257-c3b9-44dd-8ca5-0f383d438003.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q10_68208219-7f94-48be-8446-d296d03711a3.webm"
+        ];
+        const questionFiles = [
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q1_426c99f9-e6cc-45d9-995a-04ea50effbea.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q2_512d6ed6-44bd-446b-a12b-8d664dfa6b68.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q3_2ba969e1-7421-41b9-823b-b6115eaf4711.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q4_52a4b384-ccd6-4e6c-86ef-e2b33f9a7c7e.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q5_36097a2d-20e3-4fef-bcf9-807076a90e3b.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q6_3dee5223-9b49-4976-93fa-7b0ed28b111e.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q7_e3bd2454-ca23-4519-bc65-503a28d5b27a.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q8_681b20de-322f-4fc6-8b50-ecd37e265ea6.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q9_a270c910-9a77-42a0-a2cc-7eaab6044f08.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part2/q10_ed542cc5-bf90-4326-b296-21b88ef6334d.webm"
+        ];
+        const objectionFiles = [
+            "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q1_cc419767-be8d-4131-a96c-9ebd05e17c0f.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q2_6c651abe-e8ce-4cc9-9393-4e8e3c0ab007.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q3_6eb4b44a-a1cb-42ff-a48e-12ecd0105b16.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q4_f6cfdb31-8c1a-4a10-9eaa-31adeff615bb.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q5_b126f965-079b-4f50-8818-4ea124cded47.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q6_6e6df3ec-2a70-44b9-ba6d-0f28f6650c51.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q7_1bd79b02-b363-4004-80f4-fcc2936fe8ec.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q8_0cca5181-e7e9-4635-914b-050430144c8c.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q10_fbba463f-b3a5-4671-a018-006d457ccd6b.webm"
+        ];
+        
+        let randomObjectionsPool = allCustomerReplies.slice(1, 9);
+        const fixedFirstObjection = allCustomerReplies[0];
+        const finalObjection = allCustomerReplies[9]; 
+        let selectedRandomFiles = [];
+        let questionPool = [...questionFiles];
+        let objectionPool = [...objectionFiles];
+
+
+        // --- 3. Utility Functions ---
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- 4. Main Recording Logic (FIXED Button Text & State) ---
+        window.toggleRecording = async function(type) {
+            let statusElement, buttonElement, nextAutoAction, originalButtonText;
+
+            if (type === 3) { statusElement = cStatus; buttonElement = closeBtn; nextAutoAction = window.playRandomObjectionAuto; originalButtonText = '🎙️ 1. บันทึกสคริปต์ปิดการขาย'; } 
+            else if (type === 4) { statusElement = cStatus; buttonElement = replyBtn; nextAutoAction = window.startNextCloseRoundAuto; originalButtonText = '🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง'; }
+            else if (type === 1) { statusElement = status; buttonElement = recordBtn; nextAutoAction = window.endTurn; originalButtonText = '🎙️ เริ่มบันทึกเสียง (พนักงาน)'; }
+            else if (type === 2) { statusElement = qStatus; buttonElement = answerBtn; nextAutoAction = window.playRandomQuestion; originalButtonText = '🎙️ เริ่มบันทึกคำตอบ'; }
+            
+            // ⚠️ FIX: ตรวจสอบ Element ก่อนดำเนินการ
+            if (!buttonElement) {
+                console.error("Button element is not defined for type:", type);
+                return;
+            }
+
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                try {
+                    // 1. ⚠️ FIX: เปลี่ยนข้อความและปิดการใช้งานชั่วคราวระหว่างรอเข้าถึงไมโครโฟน
+                    buttonElement.textContent = "⏳ กำลังเข้าถึงไมโครโฟน..."; 
+                    buttonElement.disabled = true; 
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // 2. ตั้งค่า MediaRecorder
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = e => { 
+                        if (e.data.size > 0) masterAudioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        // 3. เมื่อหยุด: คืนสถานะปุ่มเดิมและเรียก action ถัดไป
+                        statusElement.textContent = "✅ หยุดบันทึกแล้ว - กำลังรอการโต้ตอบถัดไป...";
+                        buttonElement.textContent = originalButtonText; // คืนข้อความปุ่มเริ่มต้น
+                        
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        buttonElement.disabled = true; // ปุ่มจะถูกเปิดอีกครั้งด้วย flow ถัดไป
+                        nextAutoAction(); 
+                    };
+                    
+                    // 4. เริ่มบันทึกและเปลี่ยนข้อความเป็น STOP
+                    mediaRecorder.start();
+                    buttonElement.disabled = false; // เปิดใช้งานปุ่มเพื่อให้กด STOP ได้
+                    
+                    statusElement.textContent = "🔴 กำลังบันทึกเสียง... (กดปุ่มนี้อีกครั้งเพื่อหยุด)";
+                    
+                    if (type === 3) buttonElement.textContent = "⏹️ หยุดบันทึกสคริปต์ปิดการขาย";
+                    else if (type === 4) buttonElement.textContent = "⏹️ หยุดบันทึกเสียงตอบข้อโต้แย้ง";
+                    else buttonElement.textContent = "⏹️ หยุดบันทึก"; // สำหรับ Type 1 และ 2
+
+                    if (type === 1) nextRoundBtn.disabled = true;
+                    if (type === 2) nextSection3Btn.disabled = true;
+                    
+                } catch (err) {
+                    // คืนปุ่มเดิมหากเกิดข้อผิดพลาด
+                    buttonElement.textContent = originalButtonText;
+                    buttonElement.disabled = false;
+                    statusElement.textContent = `❌ ข้อผิดพลาดในการเข้าถึงไมโครโฟน: ${err.name}. โปรดตรวจสอบสิทธิ์.`;
+                }
+
+            } else {
+                // Logic เมื่อ mediaRecorder อยู่ในสถานะ active (ต้องการ Stop)
+                buttonElement.textContent = "⏳ กำลังหยุดบันทึก...";
+                buttonElement.disabled = true;
+                mediaRecorder.stop(); // เรียก onstop เพื่อจบกระบวนการ
+            }
+        }
+        
+        // ... (Functions 5-9 เหมือนเดิม) ...
+        function shuffle(array) { /* ... */ }
+        function prepareTurnFiles() { /* ... */ }
+        window.endTurn = function() { /* ... */ }
+        window.initSection2 = function() { /* ... */ }
+        window.playRandomQuestion = function() { /* ... */ }
+        window.initSection3 = function() { /* ... */ }
+        window.playRandomObjectionAuto = function() { /* ... */ }
+        window.startNextCloseRoundAuto = function() { /* ... */ }
+        window.uploadFinalRecording = async function(audioBlob) { /* ... */ }
+        window.saveAllRecordings = function() { /* ... */ }
+        window.generateCertificate = function() { /* ... */ }
+
+        // --- 10. Initialization and Event Listeners (FIXED Element Assignment) ---
+        function initializeUser() {
+            let userId = localStorage.getItem(USER_ID_KEY);
+            if (!userId) {
+                userId = uuidv4();
+                localStorage.setItem(USER_ID_KEY, userId);
+            }
+            currentUserId = userId;
+            prepareTurnFiles(); 
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // ⚠️ FIX: กำหนดค่าให้กับตัวแปร DOM Elements ทั้งหมด
+            inputUserName = document.getElementById('inputUserName'); 
+            turnSpan = document.getElementById("turnSpan");
+            status = document.getElementById("status");
+            recordBtn = document.getElementById("recordBtn");
+            nextRoundBtn = document.getElementById("nextRoundBtn");
+            customerAudio = document.getElementById("customerAudio");
+            qRoundSpan = document.getElementById("qRound");
+            qStatus = document.getElementById("qStatus");
+            startQBtn = document.getElementById("startQBtn");
+            answerBtn = document.getElementById("answerBtn");
+            nextSection3Btn = document.getElementById("nextSection3Btn");
+            questionAudio = document.getElementById("questionAudio");
+            cRoundSpan = document.getElementById("cRound");
+            cStatus = document.getElementById("cStatus");
+            closeBtn = document.getElementById("closeBtn");
+            replyBtn = document.getElementById("replyBtn");
+            objectionAudio = document.getElementById("objectionAudio");
+            saveAllBtn = document.getElementById("saveAllBtn");
+            loadingOverlay = document.getElementById("loadingOverlay");
+            loadingText = document.getElementById("loadingText");
+            uploadProgressBar = document.getElementById("uploadProgressBar");
+            certBtn = document.getElementById("certBtn");
+
+            initializeUser();
+
+            // ผูก Event Listener
+            recordBtn.addEventListener('click', () => window.toggleRecording(1));
+            answerBtn.addEventListener('click', () => window.toggleRecording(2));
+            closeBtn.addEventListener('click', () => window.toggleRecording(3));
+            replyBtn.addEventListener('click', () => window.toggleRecording(4));
+
+            nextRoundBtn.addEventListener('click', window.initSection2);
+            nextSection3Btn.addEventListener('click', window.initSection3);
+            startQBtn.addEventListener('click', window.playRandomQuestion);
+            saveAllBtn.addEventListener('click', window.saveAllRecordings);
+            certBtn.addEventListener('click', window.generateCertificate);
+        });
+        
+    </script>
 </body>
 </html>
