@@ -134,7 +134,7 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
         window.supabase = createClient(supabaseUrl, supabaseKey);
 
-        // State Variables (ถูกนำไปใช้ร่วมกับ DOM Elements)
+        // State Variables
         let masterAudioChunks = [];
         let mediaRecorder = null;
         let currentUserId = null; 
@@ -146,10 +146,9 @@
         let cRound = 0;
         const maxC = 5;
 
-        // DOM Element Variables (ประกาศเฉยๆ)
-        let inputUserName, turnSpan, status, recordBtn, nextRoundBtn, customerAudio, qRoundSpan, qStatus, startQBtn, answerBtn, nextSection3Btn, questionAudio, cRoundSpan, cStatus, closeBtn, replyBtn, objectionAudio, saveAllBtn, loadingOverlay, loadingText, uploadProgressBar, certBtn;
+        // Note: DOM Elements จะถูกกำหนดค่าเป็น window.variable ใน DOMContentLoaded
 
-        // ... (Audio Files URL และ Data Pools เหมือนเดิม) ...
+        // ... (Audio Files URL and Data Pools) ...
         const allCustomerReplies = [
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q1_fe75e00d-70f8-429a-806f-ae77f5cde2de.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q2_a68fb010-ec6c-47c2-95b2-d839553fe4e7.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q3_d974acce-1bc1-4473-a9f6-d49a256636ab.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q4_c3dd3875-fac4-4ad0-96d7-31adf9175c69.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q5_60ca36aa-3425-4824-987a-ff6b7fd7dbe1.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q6_75f89f58-d31d-4edb-a47d-901d0dfc92d4.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q7_490b0134-6446-4708-b86c-785d31306d07.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q8_ad281257-c3b9-44dd-8ca5-0f383d438003.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part1/q10_68208219-7f94-48be-8446-d296d03711a3.webm"
         ];
@@ -176,16 +175,17 @@
             }
         }
 
-        // --- 4. Main Recording Logic (FIXED Button Text & State) ---
+        // --- 4. Main Recording Logic (ใช้ window.variableName ทั้งหมด) ---
         window.toggleRecording = async function(type) {
+            // ดึง DOM Elements จาก window Object
             let statusElement, buttonElement, nextAutoAction, originalButtonText;
 
-            if (type === 3) { statusElement = cStatus; buttonElement = closeBtn; nextAutoAction = window.playRandomObjectionAuto; originalButtonText = '🎙️ 1. บันทึกสคริปต์ปิดการขาย'; } 
-            else if (type === 4) { statusElement = cStatus; buttonElement = replyBtn; nextAutoAction = window.startNextCloseRoundAuto; originalButtonText = '🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง'; }
-            else if (type === 1) { statusElement = status; buttonElement = recordBtn; nextAutoAction = window.endTurn; originalButtonText = '🎙️ เริ่มบันทึกเสียง (พนักงาน)'; }
-            else if (type === 2) { statusElement = qStatus; buttonElement = answerBtn; nextAutoAction = window.playRandomQuestion; originalButtonText = '🎙️ เริ่มบันทึกคำตอบ'; }
+            if (type === 3) { statusElement = window.cStatus; buttonElement = window.closeBtn; nextAutoAction = window.playRandomObjectionAuto; originalButtonText = '🎙️ 1. บันทึกสคริปต์ปิดการขาย'; } 
+            else if (type === 4) { statusElement = window.cStatus; buttonElement = window.replyBtn; nextAutoAction = window.startNextCloseRoundAuto; originalButtonText = '🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง'; }
+            else if (type === 1) { statusElement = window.status; buttonElement = window.recordBtn; nextAutoAction = window.endTurn; originalButtonText = '🎙️ เริ่มบันทึกเสียง (พนักงาน)'; }
+            else if (type === 2) { statusElement = window.qStatus; buttonElement = window.answerBtn; nextAutoAction = window.playRandomQuestion; originalButtonText = '🎙️ เริ่มบันทึกคำตอบ'; }
             
-            // ⚠️ FIX: ตรวจสอบ Element ก่อนดำเนินการ
+            
             if (!buttonElement) {
                 console.error("Button element is not defined for type:", type);
                 return;
@@ -193,7 +193,7 @@
 
             if (!mediaRecorder || mediaRecorder.state === "inactive") {
                 try {
-                    // 1. ⚠️ FIX: เปลี่ยนข้อความและปิดการใช้งานชั่วคราวระหว่างรอเข้าถึงไมโครโฟน
+                    // 1. เปลี่ยนข้อความและปิดการใช้งานชั่วคราวระหว่างรอเข้าถึงไมโครโฟน
                     buttonElement.textContent = "⏳ กำลังเข้าถึงไมโครโฟน..."; 
                     buttonElement.disabled = true; 
                     
@@ -208,26 +208,26 @@
                     mediaRecorder.onstop = () => {
                         // 3. เมื่อหยุด: คืนสถานะปุ่มเดิมและเรียก action ถัดไป
                         statusElement.textContent = "✅ หยุดบันทึกแล้ว - กำลังรอการโต้ตอบถัดไป...";
-                        buttonElement.textContent = originalButtonText; // คืนข้อความปุ่มเริ่มต้น
+                        buttonElement.textContent = originalButtonText; 
                         
                         stream.getTracks().forEach(track => track.stop());
                         
-                        buttonElement.disabled = true; // ปุ่มจะถูกเปิดอีกครั้งด้วย flow ถัดไป
+                        buttonElement.disabled = true; 
                         nextAutoAction(); 
                     };
                     
                     // 4. เริ่มบันทึกและเปลี่ยนข้อความเป็น STOP
                     mediaRecorder.start();
-                    buttonElement.disabled = false; // เปิดใช้งานปุ่มเพื่อให้กด STOP ได้
+                    buttonElement.disabled = false; 
                     
                     statusElement.textContent = "🔴 กำลังบันทึกเสียง... (กดปุ่มนี้อีกครั้งเพื่อหยุด)";
                     
                     if (type === 3) buttonElement.textContent = "⏹️ หยุดบันทึกสคริปต์ปิดการขาย";
                     else if (type === 4) buttonElement.textContent = "⏹️ หยุดบันทึกเสียงตอบข้อโต้แย้ง";
-                    else buttonElement.textContent = "⏹️ หยุดบันทึก"; // สำหรับ Type 1 และ 2
+                    else buttonElement.textContent = "⏹️ หยุดบันทึก"; 
 
-                    if (type === 1) nextRoundBtn.disabled = true;
-                    if (type === 2) nextSection3Btn.disabled = true;
+                    if (type === 1) window.nextRoundBtn.disabled = true;
+                    if (type === 2) window.nextSection3Btn.disabled = true;
                     
                 } catch (err) {
                     // คืนปุ่มเดิมหากเกิดข้อผิดพลาด
@@ -240,24 +240,264 @@
                 // Logic เมื่อ mediaRecorder อยู่ในสถานะ active (ต้องการ Stop)
                 buttonElement.textContent = "⏳ กำลังหยุดบันทึก...";
                 buttonElement.disabled = true;
-                mediaRecorder.stop(); // เรียก onstop เพื่อจบกระบวนการ
+                mediaRecorder.stop(); 
             }
         }
         
-        // ... (Functions 5-9 เหมือนเดิม) ...
-        function shuffle(array) { /* ... */ }
-        function prepareTurnFiles() { /* ... */ }
-        window.endTurn = function() { /* ... */ }
-        window.initSection2 = function() { /* ... */ }
-        window.playRandomQuestion = function() { /* ... */ }
-        window.initSection3 = function() { /* ... */ }
-        window.playRandomObjectionAuto = function() { /* ... */ }
-        window.startNextCloseRoundAuto = function() { /* ... */ }
-        window.uploadFinalRecording = async function(audioBlob) { /* ... */ }
-        window.saveAllRecordings = function() { /* ... */ }
-        window.generateCertificate = function() { /* ... */ }
+        // --- 5. Section 1 Functions (ใช้ window.variableName) ---
+        function prepareTurnFiles() {
+            selectedRandomFiles = [fixedFirstObjection];
+            shuffle(randomObjectionsPool);
+            const threeRandom = randomObjectionsPool.slice(0, 3);
+            selectedRandomFiles.push(...threeRandom);
+            selectedRandomFiles.push(finalObjection);
+        }
 
-        // --- 10. Initialization and Event Listeners (FIXED Element Assignment) ---
+        window.endTurn = function() {
+            if (turn < maxTurns) {
+                turn++;
+                window.turnSpan.textContent = turn; // ⚠️ FIX: ใช้ window.turnSpan
+                
+                const fileToPlay = selectedRandomFiles[turn - 1];
+                window.status.textContent = `⏳ กำลังโหลดเสียงลูกค้า...`;
+
+                window.customerAudio.src = fileToPlay; // ⚠️ FIX: ใช้ window.customerAudio
+                window.customerAudio.load(); 
+
+                window.customerAudio.oncanplaythrough = () => {
+                    window.status.textContent = `🔊 กำลังเล่นเสียงลูกค้า (${turn}/${maxTurns})...`;
+                    window.customerAudio.play().catch(error => {
+                            window.status.textContent = `❌ เล่นอัตโนมัติถูกบล็อก: ${error.message}. กรุณากดเริ่มบันทึกเสียงพนักงานอีกครั้ง`;
+                            window.recordBtn.disabled = false;
+                        });
+                };
+
+                window.customerAudio.onended = () => {
+                    window.customerAudio.oncanplaythrough = null; 
+                    window.customerAudio.onended = null;
+                    
+                    if (turn < maxTurns) { 
+                        window.status.textContent = `🎤 พร้อมบันทึกเสียงโต้ตอบของพนักงาน (เทิร์นที่ ${turn + 1})`;
+                        window.recordBtn.disabled = false;
+                    } else {
+                        window.status.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสาย 5 ข้อแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`;
+                        window.nextRoundBtn.disabled = false;
+                        window.recordBtn.disabled = true;
+                    }
+                };
+            }
+        }
+
+        window.initSection2 = function() {
+            window.nextRoundBtn.disabled = true;
+            window.recordBtn.disabled = true;
+            window.startQBtn.disabled = false;
+            window.nextSection3Btn.disabled = true;
+            qRound = 0; 
+            questionPool = [...questionFiles];
+            window.qStatus.textContent = "✅ ช่วงที่ 1 เสร็จสิ้น! กด 'เริ่มคำถามลูกค้า' เพื่อเริ่มช่วงที่ 2";
+            alert("จบบทที่ 1 แล้ว! เริ่มช่วงที่ 2: ตอบคำถามลูกค้า");
+        }
+
+        // --- 6. Section 2 Functions (ใช้ window.variableName) ---
+        window.playRandomQuestion = function() {
+            if (qRound >= maxQ) {
+                window.qStatus.textContent = "🎉 คำถามครบ 10 ข้อแล้ว! กรุณากด 'จบบทที่ 2' เพื่อไปช่วงที่ 3";
+                window.nextSection3Btn.disabled = false;
+                window.startQBtn.disabled = true;
+                window.answerBtn.disabled = true;
+                return;
+            }
+            
+            qRound++;
+            window.qRoundSpan.textContent = qRound;
+            
+            if (questionPool.length === 0) return;
+            
+            const randomIndex = Math.floor(Math.random() * questionPool.length);
+            const selectedFile = questionPool[randomIndex];
+            questionPool.splice(randomIndex, 1);
+            
+            window.questionAudio.src = selectedFile;
+            window.questionAudio.load();
+
+            window.qStatus.textContent = "⏳ กำลังโหลดคำถามลูกค้า...";
+            window.startQBtn.disabled = true;
+            window.answerBtn.disabled = true;
+
+            window.questionAudio.oncanplaythrough = () => {
+                window.questionAudio.play();
+                window.qStatus.textContent = `🔊 กำลังเล่นคำถามที่ ${qRound}/${maxQ}...`;
+            };
+            
+            window.questionAudio.onended = () => {
+                window.qStatus.textContent = "🎤 พร้อมบันทึกคำตอบ";
+                window.answerBtn.disabled = false;
+                if (qRound === 1) window.startQBtn.style.display = 'none';
+            };
+        }
+
+        window.initSection3 = function() {
+            window.nextSection3Btn.disabled = true;
+            window.startQBtn.disabled = true;
+            window.answerBtn.disabled = true;
+            window.closeBtn.disabled = false; 
+            window.replyBtn.disabled = true; 
+            cRound = 0;
+            objectionPool = [...objectionFiles];
+            window.closeBtn.style.display = 'block'; 
+            window.cStatus.textContent = "✅ ช่วงที่ 2 เสร็จสิ้น! กด '1. บันทึกสคริปต์ปิดการขาย' เพื่อเริ่มรอบปิดการขาย";
+            alert("จบบทที่ 2 แล้ว! เริ่มช่วงที่ 3: ปิดการขาย (5 รอบ)");
+        }
+
+
+        // --- 7. Section 3 Auto-Flow Functions (ใช้ window.variableName) ---
+        window.playRandomObjectionAuto = function() {
+            cRound++;
+            window.cRoundSpan.textContent = cRound;
+
+            if (cRound > maxC) {
+                window.cStatus.textContent = "🎉 เสร็จสิ้นแบบทดสอบทั้งหมด! กรุณากด '💾 บันทึกไฟล์เสียงทั้งหมด'";
+                window.replyBtn.disabled = true;
+                window.closeBtn.style.display = 'none'; 
+                window.saveAllBtn.disabled = false;
+                return;
+            }
+
+            if(cRound === 1) window.closeBtn.style.display = 'none';
+            
+            if (objectionPool.length === 0) return;
+            
+            const randomIndex = Math.floor(Math.random() * objectionPool.length);
+            const selectedFile = objectionPool[randomIndex];
+            objectionPool.splice(randomIndex, 1);
+
+            window.objectionAudio.src = selectedFile;
+            window.objectionAudio.load();
+
+            window.replyBtn.disabled = true;
+            window.cStatus.textContent = `⏳ กำลังโหลดข้อโต้แย้งลูกค้า (รอบที่ ${cRound}/${maxC})...`;
+
+            window.objectionAudio.oncanplaythrough = () => {
+                window.objectionAudio.play();
+                window.cStatus.textContent = `🔊 กำลังเล่นข้อโต้แย้งลูกค้า (รอบที่ ${cRound}/${maxC})...`;
+            };
+
+            window.objectionAudio.onended = () => {
+                window.cStatus.textContent = "🎤 พร้อมบันทึกเสียงตอบกลับข้อโต้แย้ง";
+                window.replyBtn.disabled = false;
+                window.replyBtn.textContent = `🎙️ ${cRound === maxC ? '5. บันทึกเสียงตอบข้อโต้แย้งสุดท้าย' : (cRound + 1) + '. บันทึกเสียงตอบข้อโต้แย้ง'}`;
+            };
+        }
+        
+        window.startNextCloseRoundAuto = function() {
+            if (cRound < maxC) {
+                window.cStatus.textContent = "✅ บันทึกเสร็จสิ้น! ข้อโต้แย้งลูกค้าถัดไปกำลังจะเริ่ม...";
+                setTimeout(window.playRandomObjectionAuto, 1500);
+            } else {
+                window.cStatus.textContent = "🎉 เสร็จสิ้นแบบทดสอบทั้งหมด! กรุณากด '💾 บันทึกไฟล์เสียงทั้งหมด'";
+                window.replyBtn.disabled = true;
+                window.closeBtn.style.display = 'none';
+                window.saveAllBtn.disabled = false;
+            }
+        }
+
+        // --- 8. Supabase Upload Functions (ใช้ window.variableName) ---
+        window.uploadFinalRecording = async function(audioBlob) {
+            if (!currentUserId) { throw new Error("ไม่พบรหัสผู้ใช้งาน กรุณาโหลดหน้าใหม่"); }
+            
+            const userName = window.inputUserName.value.trim() ||
+                `ผู้ใช้งาน ID: ${currentUserId.substring(0, 8)}...`;
+            
+            window.loadingOverlay.style.display = "flex";
+            window.loadingText.textContent = `กำลังอัปโหลดไฟล์ขนาด ${(audioBlob.size / (1024 * 1024)).toFixed(2)} MB...`;
+
+            try {
+                const fileName = `${currentUserId}/final/full_session_${uuidv4()}.webm`;
+                
+                // 1. Upload file to Supabase Storage
+                const { error: uploadError } = await window.supabase.storage
+                    .from('responses') 
+                    .upload(fileName, audioBlob, { upsert: false });
+          
+                if (uploadError) { throw uploadError; }
+
+                // 2. Get Public URL
+                const { data: { publicUrl } } = window.supabase.storage.from('responses').getPublicUrl(fileName);
+
+                // 3. Insert record into Supabase Database
+                window.loadingText.textContent = `กำลังบันทึกข้อมูลลงฐานข้อมูล...`;
+                const { error: insertError } 
+                    = await window.supabase
+                    .from('submissions') 
+                    .insert([
+                        {
+                            user_id: currentUserId,
+                            name: userName, 
+                            email: `anon_${currentUserId}@roleplay.com`, 
+                            part_number: 99, 
+                            question_number: 0,
+                            question_text: "Final Full Roleplay Session (Part 1-3 Combined)",
+                            audio_url: publicUrl,
+                            duration_seconds: audioBlob.size > 0 ? (audioBlob.size / 100000) : 0 
+                        }
+                    ]);
+                if (insertError) { throw insertError; }
+
+                window.loadingText.textContent = `✅ อัปโหลดเสร็จสมบูรณ์!`;
+                window.uploadProgressBar.style.width = `100%`;
+                return true;
+            } catch (err) {
+                console.error('เกิดข้อผิดพลาดในการอัปโหลด:', err);
+                alert(`เกิดข้อผิดพลาดในการอัปโหลด: ${err.message}. โปรดตรวจสอบ Internet/RLS.`);
+                return false;
+            } finally {
+                setTimeout(() => { window.loadingOverlay.style.display = "none"; }, 1000);
+            }
+        }
+
+        window.saveAllRecordings = function() {
+            if (masterAudioChunks.length === 0) {
+                alert("ไม่มีไฟล์เสียงบันทึกไว้! โปรดตรวจสอบว่าคุณได้กด 'เริ่มบันทึก' และ 'หยุดบันทึก' ในทุกเทิร์นแล้ว");
+                return;
+            }
+            if (!window.inputUserName.value.trim()) { // ⚠️ FIX: ใช้ window.inputUserName
+                 alert("กรุณากรอกชื่อ-นามสกุล/รหัสพนักงานก่อนทำการบันทึกและอัปโหลด");
+                 window.inputUserName.focus();
+                 return;
+            }
+            
+            window.saveAllBtn.disabled = true;
+            window.saveAllBtn.textContent = "⏳ กำลังรวมและอัปโหลดไฟล์...";
+            
+            const audioBlob = new Blob(masterAudioChunks, { type: 'audio/webm' }); 
+            
+            window.uploadFinalRecording(audioBlob).then(success => {
+                if (success) {
+                    window.saveAllBtn.textContent = "✅ อัปโหลดไฟล์เสียงรวมเสร็จสิ้น!";
+                    window.saveAllBtn.classList.add('done');
+                    window.generateCertificate();
+                } else {
+                     window.saveAllBtn.disabled = false;
+                     window.saveAllBtn.textContent = "❌ อัปโหลดล้มเหลว ลองอีกครั้ง";
+                }
+            });
+        }
+        
+        // --- 9. Certificate Function ---
+        window.generateCertificate = function() {
+            const name = prompt("กรุณากรอกชื่อพนักงาน (สำหรับใบประกาศ):");
+            if (name) {
+                document.getElementById("traineeName").textContent = name;
+                const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById("issueDate").textContent = today;
+                document.getElementById("certificate").style.display = "block";
+                document.getElementById("certificate").scrollIntoView({ behavior: "smooth" });
+            }
+        }
+
+
+        // --- 10. Initialization and Event Listeners (FIXED Scope) ---
         function initializeUser() {
             let userId = localStorage.getItem(USER_ID_KEY);
             if (!userId) {
@@ -269,43 +509,43 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // ⚠️ FIX: กำหนดค่าให้กับตัวแปร DOM Elements ทั้งหมด
-            inputUserName = document.getElementById('inputUserName'); 
-            turnSpan = document.getElementById("turnSpan");
-            status = document.getElementById("status");
-            recordBtn = document.getElementById("recordBtn");
-            nextRoundBtn = document.getElementById("nextRoundBtn");
-            customerAudio = document.getElementById("customerAudio");
-            qRoundSpan = document.getElementById("qRound");
-            qStatus = document.getElementById("qStatus");
-            startQBtn = document.getElementById("startQBtn");
-            answerBtn = document.getElementById("answerBtn");
-            nextSection3Btn = document.getElementById("nextSection3Btn");
-            questionAudio = document.getElementById("questionAudio");
-            cRoundSpan = document.getElementById("cRound");
-            cStatus = document.getElementById("cStatus");
-            closeBtn = document.getElementById("closeBtn");
-            replyBtn = document.getElementById("replyBtn");
-            objectionAudio = document.getElementById("objectionAudio");
-            saveAllBtn = document.getElementById("saveAllBtn");
-            loadingOverlay = document.getElementById("loadingOverlay");
-            loadingText = document.getElementById("loadingText");
-            uploadProgressBar = document.getElementById("uploadProgressBar");
-            certBtn = document.getElementById("certBtn");
+            // ⚠️ FIX: กำหนดค่าให้กับตัวแปร DOM Elements **บน window object**
+            window.inputUserName = document.getElementById('inputUserName'); 
+            window.turnSpan = document.getElementById("turnSpan");
+            window.status = document.getElementById("status");
+            window.recordBtn = document.getElementById("recordBtn");
+            window.nextRoundBtn = document.getElementById("nextRoundBtn");
+            window.customerAudio = document.getElementById("customerAudio");
+            window.qRoundSpan = document.getElementById("qRound");
+            window.qStatus = document.getElementById("qStatus");
+            window.startQBtn = document.getElementById("startQBtn");
+            window.answerBtn = document.getElementById("answerBtn");
+            window.nextSection3Btn = document.getElementById("nextSection3Btn");
+            window.questionAudio = document.getElementById("questionAudio");
+            window.cRoundSpan = document.getElementById("cRound");
+            window.cStatus = document.getElementById("cStatus");
+            window.closeBtn = document.getElementById("closeBtn");
+            window.replyBtn = document.getElementById("replyBtn");
+            window.objectionAudio = document.getElementById("objectionAudio");
+            window.saveAllBtn = document.getElementById("saveAllBtn");
+            window.loadingOverlay = document.getElementById("loadingOverlay");
+            window.loadingText = document.getElementById("loadingText");
+            window.uploadProgressBar = document.getElementById("uploadProgressBar");
+            window.certBtn = document.getElementById("certBtn");
 
             initializeUser();
 
             // ผูก Event Listener
-            recordBtn.addEventListener('click', () => window.toggleRecording(1));
-            answerBtn.addEventListener('click', () => window.toggleRecording(2));
-            closeBtn.addEventListener('click', () => window.toggleRecording(3));
-            replyBtn.addEventListener('click', () => window.toggleRecording(4));
+            window.recordBtn.addEventListener('click', () => window.toggleRecording(1));
+            window.answerBtn.addEventListener('click', () => window.toggleRecording(2));
+            window.closeBtn.addEventListener('click', () => window.toggleRecording(3));
+            window.replyBtn.addEventListener('click', () => window.toggleRecording(4));
 
-            nextRoundBtn.addEventListener('click', window.initSection2);
-            nextSection3Btn.addEventListener('click', window.initSection3);
-            startQBtn.addEventListener('click', window.playRandomQuestion);
-            saveAllBtn.addEventListener('click', window.saveAllRecordings);
-            certBtn.addEventListener('click', window.generateCertificate);
+            window.nextRoundBtn.addEventListener('click', window.initSection2);
+            window.nextSection3Btn.addEventListener('click', window.initSection3);
+            window.startQBtn.addEventListener('click', window.playRandomQuestion);
+            window.saveAllBtn.addEventListener('click', window.saveAllRecordings);
+            window.certBtn.addEventListener('click', window.generateCertificate);
         });
         
     </script>
