@@ -39,7 +39,7 @@
             width: 90%; /* ลดความกว้างสูงสุดสำหรับมือถือ */
             max-width: 800px;
             margin: 40px auto; 
-            text-align: center; /* 👈 ยืนยันว่าเนื้อหาภายในอยู่กึ่งกลาง */
+            text-align: center; 
             display: none; 
         }
         
@@ -93,8 +93,33 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             width: 100%;
+            max-width: 400px;
             box-sizing: border-box;
             margin-top: 5px;
+            text-align: center;
+        }
+
+        /* NEW: Difficulty Radio Styles */
+        .difficulty-option {
+            display: inline-block;
+            margin: 10px;
+            cursor: pointer;
+            padding: 10px 15px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        .difficulty-option:hover {
+            border-color: #007bff;
+        }
+        input[type="radio"]:checked + .difficulty-option {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+            font-weight: bold;
+        }
+        input[type="radio"] {
+            display: none; /* Hide the default radio button */
         }
     </style>
 </head>
@@ -113,62 +138,90 @@
     <h1>E-Simulator Roleplay</h1>
     <div style="max-width: 700px; margin: 0 auto; padding-bottom: 20px;">
         
-        <div style="margin-bottom: 20px;">
-            <label for="inputUserName">ชื่อ-นามสกุล/รหัสพนักงาน (สำหรับบันทึกในฐานข้อมูล):</label>
-            <input type="text" class="form-control" id="inputUserName" placeholder="กรอกชื่อของคุณ" required>
-            <small class="text-muted">โปรดกรอกก่อนเริ่มทำแบบทดสอบ</small>
+        <div id="registrationSection">
+            <h2 style="color: #333;">📝 หน้าลงทะเบียนและตั้งค่าแบบทดสอบ</h2>
+            <div style="margin-bottom: 20px;">
+                <label for="inputUserName" style="font-weight: bold; display: block; margin-bottom: 10px;">
+                    ชื่อ-นามสกุล/รหัสพนักงาน:
+                </label>
+                <input type="text" class="form-control" id="inputUserName" placeholder="กรอกชื่อของคุณ" required>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 10px;">
+                    ระดับความยากของแบบทดสอบ:
+                </label>
+                <div>
+                    <input type="radio" id="diffEasy" name="difficulty" value="easy" checked>
+                    <label for="diffEasy" class="difficulty-option">ง่าย (Easy)</label>
+                    
+                    <input type="radio" id="diffHard" name="difficulty" value="hard">
+                    <label for="diffHard" class="difficulty-option">ยาก (Hard)</label>
+
+                    <input type="radio" id="diffHarder" name="difficulty" value="harder">
+                    <label for="diffHarder" class="difficulty-option">ยากขึ้น (Harder)</label>
+                </div>
+            </div>
+            
+            <button id="startTestBtn" style="background-color: #28a745; color: white;">
+                ▶️ เริ่มทำแบบทดสอบ
+            </button>
+            <hr>
         </div>
+        <div id="testSection" style="display: none;">
+            
+            <h2 id="section1Title">🗣️ ช่วงที่ 1: เปิดตัว/โต้ตอบต้นสาย (เทิร์นที่ <span id="turnSpan">1</span>/<span id="maxTurnSpan">5</span>)</h2>
+            <audio id="customerAudio" src=""></audio>
+            <button id="recordBtn">🎙️ เริ่มบันทึกเสียง (พนักงาน)</button>
+            <button disabled id="nextRoundBtn">✅ จบบทที่ 1 (ไปช่วงที่ 2)</button>
+            <p id="status">รอเริ่มบันทึกบทพูดเปิดตัว</p>
+            <hr>
 
-        <hr>
-        <h2 id="section1Title">🗣️ ช่วงที่ 1: เปิดตัว/โต้ตอบต้นสาย (เทิร์นที่ <span id="turnSpan">1</span>/5)</h2>
-        <audio id="customerAudio" src=""></audio>
-        <button id="recordBtn">🎙️ เริ่มบันทึกเสียง (พนักงาน)</button>
-        <button disabled id="nextRoundBtn">✅ จบบทที่ 1 (ไปช่วงที่ 2)</button>
-        <p id="status">รอเริ่มบันทึกบทพูดเปิดตัว</p>
-        <hr>
+            <h2>❓ ช่วงที่ 2: ตอบคำถามลูกค้า (รอบที่ <span id="qRound">1</span>/<span id="maxQSpan">10</span>)</h2>
+            <audio id="questionAudio"></audio>
+            <button disabled id="startQBtn">🔊 เริ่มคำถามลูกค้า</button>
+            <button disabled id="answerBtn">🎙️ เริ่มบันทึกคำตอบ</button>
+            <button disabled id="nextSection3Btn">✅ จบบทที่ 2 (ไปช่วงที่ 3)</button>
+            <p id="qStatus">รอเริ่มช่วงที่ 2</p>
+            <hr>
 
-        <h2>❓ ช่วงที่ 2: ตอบคำถามลูกค้า (รอบที่ <span id="qRound">1</span>/10)</h2>
-        <audio id="questionAudio"></audio>
-        <button disabled id="startQBtn">🔊 เริ่มคำถามลูกค้า</button>
-        <button disabled id="answerBtn">🎙️ เริ่มบันทึกคำตอบ</button>
-        <button disabled id="nextSection3Btn">✅ จบบทที่ 2 (ไปช่วงที่ 3)</button>
-        <p id="qStatus">รอเริ่มช่วงที่ 2</p>
-        <hr>
+            <h2>💰 ช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง (รอบที่ <span id="cRound">1</span>/<span id="maxCSpan">5</span>)</h2>
+            <button disabled id="closeBtn">🎙️ 1. บันทึกสคริปต์ปิดการขาย</button>
+            <audio id="objectionAudio"></audio>
+            <button disabled id="replyBtn">🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง</button>
+            <button disabled id="nextSection4Btn">✅ จบบทที่ 3 (ไปช่วงที่ 4)</button>
+            <p id="cStatus">รอเริ่มช่วงที่ 3</p>
+            <hr>
 
-        <h2>💰 ช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง (รอบที่ <span id="cRound">1</span>/5)</h2>
-        <button disabled id="closeBtn">🎙️ 1. บันทึกสคริปต์ปิดการขาย</button>
-        <audio id="objectionAudio"></audio>
-        <button disabled id="replyBtn">🎙️ 2. บันทึกเสียงตอบข้อโต้แย้ง</button>
-        <button disabled id="nextSection4Btn">✅ จบบทที่ 3 (ไปช่วงที่ 4)</button>
-        <p id="cStatus">รอเริ่มช่วงที่ 3</p>
-        <hr>
+            <h2>🏥 ช่วงที่ 4: ลูกค้ามีปัญหาสุขภาพ (รอบที่ <span id="hRound">1</span>/<span id="maxHSpan">5</span>)</h2>
+            <audio id="healthAudio"></audio>
+            <button disabled id="startHBtn">🔊 เริ่มคำถามสุขภาพ</button>
+            <button disabled id="answerHBtn">🎙️ เริ่มบันทึกคำตอบ</button>
+            <button disabled id="nextSection5Btn">✅ จบบทที่ 4 (ไปช่วงที่ 5)</button>
+            <p id="hStatus">รอเริ่มช่วงที่ 4</p>
+            <hr>
 
-        <h2>🏥 ช่วงที่ 4: ลูกค้ามีปัญหาสุขภาพ (รอบที่ <span id="hRound">1</span>/5)</h2>
-        <audio id="healthAudio"></audio>
-        <button disabled id="startHBtn">🔊 เริ่มคำถามสุขภาพ</button>
-        <button disabled id="answerHBtn">🎙️ เริ่มบันทึกคำตอบ</button>
-        <button disabled id="nextSection5Btn">✅ จบบทที่ 4 (ไปช่วงที่ 5)</button>
-        <p id="hStatus">รอเริ่มช่วงที่ 4</p>
-        <hr>
-        <h2>🤝 ช่วงที่ 5: ลูกค้าตกลงซื้อประกัน (รอบที่ <span id="aRound">1</span>/3)</h2>
-        <audio id="agreementAudio"></audio>
-        <button disabled id="startABtn">🔊 เริ่มการยืนยันการตกลง</button>
-        <button disabled id="answerABtn">🎙️ เริ่มบันทึกคำตอบยืนยัน</button>
-        <button disabled id="finalSaveBtn">💾 บันทึกไฟล์เสียงทั้งหมดและอัปโหลด</button>
-        <p id="aStatus">รอเริ่มช่วงที่ 5</p>
-        <hr>
-        <div id="certificate">
-            <h1>ใบประกาศนียบัตร</h1>
-            <p>ขอมอบให้แก่</p>
-            <h2 id="traineeName">[ชื่อพนักงาน]</h2>
-            <p>เพื่อแสดงว่าได้ผ่านการทดสอบ</p>
-            <p><strong>หลักสูตรการขายประกันทางโทรศัพท์</strong></p>
-            <p style="margin-top: 40px;">ลงชื่อ....................................................</p>
-            <p>(หัวหน้าฝึกอบรม)</p>
-            <p style="margin-top: 20px;">วันที่ออกใบประกาศ: <span id="issueDate"></span></p>
+            <h2>🤝 ช่วงที่ 5: ลูกค้าตกลงซื้อประกัน (รอบที่ <span id="aRound">1</span>/<span id="maxASpan">3</span>)</h2>
+            <audio id="agreementAudio"></audio>
+            <button disabled id="startABtn">🔊 เริ่มการยืนยันการตกลง</button>
+            <button disabled id="answerABtn">🎙️ เริ่มบันทึกคำตอบยืนยัน</button>
+            <button disabled id="finalSaveBtn">💾 บันทึกไฟล์เสียงทั้งหมดและอัปโหลด</button>
+            <p id="aStatus">รอเริ่มช่วงที่ 5</p>
+            <hr>
+            
+            <div id="certificate">
+                <h1>ใบประกาศนียบัตร</h1>
+                <p>ขอมอบให้แก่</p>
+                <h2 id="traineeName">[ชื่อพนักงาน]</h2>
+                <p>เพื่อแสดงว่าได้ผ่านการทดสอบ</p>
+                <p><strong>หลักสูตรการขายประกันทางโทรศัพท์</strong></p>
+                <p style="margin-top: 40px;">ลงชื่อ....................................................</p>
+                <p>(หัวหน้าฝึกอบรม)</p>
+                <p style="margin-top: 20px;">วันที่ออกใบประกาศ: <span id="issueDate"></span></p>
+            </div>
+            <button id="certBtn">🎓 แสดงใบประกาศ</button>
         </div>
-        <button id="certBtn">🎓 แสดงใบประกาศ</button>
-    </div>
+        </div>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -185,22 +238,26 @@
         let currentUserId = null; 
         const USER_ID_KEY = 'roleplay_user_id'; 
         
-        // Section 1
+        // Round Counters (Dynamic based on difficulty)
         let turn = 0; 
-        const maxTurns = 5;
-        // Section 2
         let qRound = 0;
-        const maxQ = 10;
-        // Section 3
         let cRound = 0;
-        const maxC = 5;
-        // Section 4 (NEW)
         let hRound = 0;
-        const maxH = 5; // 5 rounds for health questions
-        // Section 5 (NEW)
         let aRound = 0;
-        const maxA = 3; // 3 rounds for agreement questions
 
+        // Global Max Rounds (Set dynamically by difficulty)
+        let maxTurns;
+        let maxQ;
+        let maxC;
+        let maxH; 
+        let maxA;
+
+        // Difficulty Configurations (Max round count is limited by available audio files in the hardcoded arrays)
+        const difficultyConfig = {
+            easy: { S1: 3, S2: 5, S3: 3, S4: 3, S5: 2, label: "ง่าย (Easy)" },
+            hard: { S1: 5, S2: 8, S3: 5, S4: 5, S5: 3, label: "ยาก (Hard)" },
+            harder: { S1: 5, S2: 10, S3: 5, S4: 5, S5: 3, label: "ยากขึ้น (Harder)" }
+        };
 
         // --- 2. Audio Files URL (เหมือนเดิม + New Pool Slices) ---
         const allCustomerReplies = [
@@ -213,9 +270,10 @@
             "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q1_cc419767-be8d-4131-a96c-9ebd05e17c0f.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q2_6c651abe-e8ce-4cc9-9393-4e8e3c0ab007.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q3_6eb4b44a-a1cb-42ff-a48e-12ecd0105b16.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q4_f6cfdb31-8c1a-4a10-9eaa-31adeff615bb.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q5_b126f965-079b-4f50-8818-4ea124cded47.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q6_6e6df3ec-2a70-44b9-ba6d-0f28f6650c51.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q7_1bd79b02-b363-4004-80f4-fcc2936fe8ec.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q8_0cca5181-e7e9-4635-914b-050430144c8c.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q9_36918038-0a42-4b6b-afc6-048a619f589d.webm", "https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/4e1a6a7a-3666-4a39-a3ca-9e9b87a5f2de/part3/q10_fbba463f-b3a5-4671-a018-006d457ccd6b.webm"
         ];
         
-        // Slices the original questionFiles for the new pools (PLACEHOLDERS)
-        const healthQuestionFiles = questionFiles.slice(0, maxH); // Q1-Q5
-        const agreementQuestionFiles = questionFiles.slice(maxH, maxH + maxA); // Q6-Q8
+        // **IMPORTANT:** Since the audio pools are only size 10, S4 max (5) and S5 max (3) are derived from the Q pool (size 10)
+        // This is why maxH and maxA are capped in the difficultyConfig.
+        const healthQuestionFiles = questionFiles.slice(0, 5); 
+        const agreementQuestionFiles = questionFiles.slice(5, 5 + 3); 
 
         let randomObjectionsPool = allCustomerReplies.slice(1, 9);
         const fixedFirstObjection = allCustomerReplies[0];
@@ -224,8 +282,8 @@
         let questionPool = [...questionFiles];
         let objectionPool = [...objectionFiles];
         
-        let healthPool = [...healthQuestionFiles]; // New pool
-        let agreementPool = [...agreementQuestionFiles]; // New pool
+        let healthPool = [...healthQuestionFiles]; 
+        let agreementPool = [...agreementQuestionFiles]; 
 
 
         // --- 3. Utility Functions ---
@@ -315,9 +373,12 @@
         
         // --- 5. Section 1 Functions (UNCHANGED) ---
         function prepareTurnFiles() {
+            // S1 uses maxTurns for its loop, but file selection uses a fixed pool
             selectedRandomFiles = [fixedFirstObjection];
             shuffle(randomObjectionsPool); 
-            const threeRandom = randomObjectionsPool.slice(0, 3);
+            // Select (maxTurns - 2) random files + fixed first (1) + fixed final (1)
+            const randomCount = Math.min(maxTurns - 2, randomObjectionsPool.length); 
+            const threeRandom = randomObjectionsPool.slice(0, randomCount);
             selectedRandomFiles.push(...threeRandom);
             selectedRandomFiles.push(finalObjection);
         }
@@ -349,7 +410,7 @@
                         window.s1StatusElement.textContent = `🎤 พร้อมบันทึกเสียงโต้ตอบของพนักงาน (เทิร์นที่ ${turn + 1})`; 
                         window.recordBtn.disabled = false;
                     } else {
-                        window.s1StatusElement.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสาย 5 ข้อแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`; 
+                        window.s1StatusElement.textContent = `🎉 เสร็จสิ้นบทสนทนาต้นสาย ${maxTurns} ข้อแล้ว! กรุณากดปุ่ม "จบบทที่ 1"`; 
                         window.nextRoundBtn.disabled = false;
                         window.recordBtn.disabled = true;
                     }
@@ -363,7 +424,7 @@
             window.startQBtn.disabled = false;
             window.nextSection3Btn.disabled = true;
             qRound = 0; 
-            questionPool = [...questionFiles];
+            questionPool = [...questionFiles]; // Full question pool (max 10)
             window.s2StatusElement.textContent = "✅ ช่วงที่ 1 เสร็จสิ้น! กด 'เริ่มคำถามลูกค้า' เพื่อเริ่มช่วงที่ 2"; 
             alert("จบบทที่ 1 แล้ว! เริ่มช่วงที่ 2: ตอบคำถามลูกค้า");
         }
@@ -371,7 +432,7 @@
         // --- 6. Section 2 Functions (UNCHANGED) ---
         window.playRandomQuestion = function() {
             if (qRound >= maxQ) {
-                window.s2StatusElement.textContent = "🎉 คำถามครบ 10 ข้อแล้ว! กรุณากด 'จบบทที่ 2' เพื่อไปช่วงที่ 3"; 
+                window.s2StatusElement.textContent = `🎉 คำถามครบ ${maxQ} ข้อแล้ว! กรุณากด 'จบบทที่ 2' เพื่อไปช่วงที่ 3`; 
                 window.nextSection3Btn.disabled = false;
                 window.startQBtn.disabled = true;
                 window.answerBtn.disabled = true;
@@ -381,11 +442,13 @@
             qRound++;
             window.qRoundSpan.textContent = qRound;
             
-            if (questionPool.length === 0) return;
+            // Limit selection to maxQ
+            const currentPool = questionPool.slice(0, maxQ - qRound + 1);
+            if (currentPool.length === 0) return;
             
-            const randomIndex = Math.floor(Math.random() * questionPool.length);
-            const selectedFile = questionPool[randomIndex];
-            questionPool.splice(randomIndex, 1);
+            const randomIndex = Math.floor(Math.random() * currentPool.length);
+            const selectedFile = currentPool[randomIndex];
+            questionPool.splice(questionPool.indexOf(selectedFile), 1); // Remove selected file from the main pool
             
             window.questionAudio.src = selectedFile;
             window.questionAudio.load();
@@ -414,10 +477,10 @@
             window.replyBtn.disabled = true; 
             window.nextSection4Btn.disabled = true; // NEW BUTTON
             cRound = 0;
-            objectionPool = [...objectionFiles];
+            objectionPool = [...objectionFiles]; // Full objection pool (max 10)
             window.closeBtn.style.display = 'block'; 
             window.s3StatusElement.textContent = "✅ ช่วงที่ 2 เสร็จสิ้น! กด '1. บันทึกสคริปต์ปิดการขาย' เพื่อเริ่มรอบปิดการขาย"; 
-            alert("จบบทที่ 2 แล้ว! เริ่มช่วงที่ 3: ปิดการขาย (5 รอบ)");
+            alert("จบบทที่ 2 แล้ว! เริ่มช่วงที่ 3: ปิดการขาย + ข้อโต้แย้ง");
         }
 
 
@@ -436,11 +499,13 @@
 
             if(cRound === 1) window.closeBtn.style.display = 'none';
             
-            if (objectionPool.length === 0) return;
+            // Limit selection to maxC
+            const currentPool = objectionPool.slice(0, maxC - cRound + 1);
+            if (currentPool.length === 0) return;
             
-            const randomIndex = Math.floor(Math.random() * objectionPool.length);
-            const selectedFile = objectionPool[randomIndex];
-            objectionPool.splice(randomIndex, 1);
+            const randomIndex = Math.floor(Math.random() * currentPool.length);
+            const selectedFile = currentPool[randomIndex];
+            objectionPool.splice(objectionPool.indexOf(selectedFile), 1);
 
             window.objectionAudio.src = selectedFile;
             window.objectionAudio.load();
@@ -456,7 +521,7 @@
             window.objectionAudio.onended = () => {
                 window.s3StatusElement.textContent = "🎤 พร้อมบันทึกเสียงตอบกลับข้อโต้แย้ง"; 
                 window.replyBtn.disabled = false;
-                window.replyBtn.textContent = `🎙️ ${cRound === maxC ? '5. บันทึกเสียงตอบข้อโต้แย้งสุดท้าย' : (cRound + 1) + '. บันทึกเสียงตอบข้อโต้แย้ง'}`;
+                window.replyBtn.textContent = `🎙️ ${cRound === maxC ? maxC + '. บันทึกเสียงตอบข้อโต้แย้งสุดท้าย' : (cRound + 1) + '. บันทึกเสียงตอบข้อโต้แย้ง'}`;
             };
         }
         
@@ -483,14 +548,14 @@
             window.nextSection5Btn.disabled = true;
             
             hRound = 0; 
-            healthPool = [...healthQuestionFiles]; // Reset health pool
+            healthPool = [...healthQuestionFiles]; // Health pool (max 5)
             window.hStatusElement.textContent = "✅ ช่วงที่ 3 เสร็จสิ้น! กด 'เริ่มคำถามสุขภาพ' เพื่อเริ่มช่วงที่ 4"; 
-            alert("จบบทที่ 3 แล้ว! เริ่มช่วงที่ 4: ลูกค้ามีปัญหาสุขภาพ (5 รอบ)");
+            alert("จบบทที่ 3 แล้ว! เริ่มช่วงที่ 4: ลูกค้ามีปัญหาสุขภาพ");
         }
         
         window.playRandomHealthQuestion = function() {
             if (hRound >= maxH) {
-                window.hStatusElement.textContent = "🎉 คำถามสุขภาพครบ 5 ข้อแล้ว! กรุณากด 'จบบทที่ 4' เพื่อไปช่วงที่ 5"; 
+                window.hStatusElement.textContent = `🎉 คำถามสุขภาพครบ ${maxH} ข้อแล้ว! กรุณากด 'จบบทที่ 4' เพื่อไปช่วงที่ 5`; 
                 window.nextSection5Btn.disabled = false;
                 window.startHBtn.disabled = true;
                 window.answerHBtn.disabled = true;
@@ -500,11 +565,13 @@
             hRound++;
             window.hRoundSpan.textContent = hRound;
             
-            if (healthPool.length === 0) return;
+            // Limit selection to maxH
+            const currentPool = healthPool.slice(0, maxH - hRound + 1);
+            if (currentPool.length === 0) return;
             
-            const randomIndex = Math.floor(Math.random() * healthPool.length);
-            const selectedFile = healthPool[randomIndex];
-            healthPool.splice(randomIndex, 1);
+            const randomIndex = Math.floor(Math.random() * currentPool.length);
+            const selectedFile = currentPool[randomIndex];
+            healthPool.splice(healthPool.indexOf(selectedFile), 1); // Remove selected file from the main pool
             
             window.healthAudio.src = selectedFile;
             window.healthAudio.load();
@@ -537,9 +604,9 @@
             window.finalSaveBtn.disabled = true;
             
             aRound = 0; 
-            agreementPool = [...agreementQuestionFiles]; // Reset agreement pool
+            agreementPool = [...agreementQuestionFiles]; // Agreement pool (max 3)
             window.aStatusElement.textContent = "✅ ช่วงที่ 4 เสร็จสิ้น! กด 'เริ่มการยืนยันการตกลง' เพื่อเริ่มช่วงที่ 5"; 
-            alert("จบบทที่ 4 แล้ว! เริ่มช่วงที่ 5: ลูกค้าตกลงซื้อประกัน (3 รอบ)");
+            alert("จบบทที่ 4 แล้ว! เริ่มช่วงที่ 5: ลูกค้าตกลงซื้อประกัน");
         }
         
         window.playRandomAgreementQuestion = function() {
@@ -554,11 +621,13 @@
             aRound++;
             window.aRoundSpan.textContent = aRound;
             
-            if (agreementPool.length === 0) return;
+            // Limit selection to maxA
+            const currentPool = agreementPool.slice(0, maxA - aRound + 1);
+            if (currentPool.length === 0) return;
             
-            const randomIndex = Math.floor(Math.random() * agreementPool.length);
-            const selectedFile = agreementPool[randomIndex];
-            agreementPool.splice(randomIndex, 1);
+            const randomIndex = Math.floor(Math.random() * currentPool.length);
+            const selectedFile = currentPool[randomIndex];
+            agreementPool.splice(agreementPool.indexOf(selectedFile), 1); // Remove selected file from the main pool
             
             window.agreementAudio.src = selectedFile;
             window.agreementAudio.load();
@@ -614,7 +683,7 @@
                             email: `anon_${currentUserId}@roleplay.com`, 
                             part_number: 99, 
                             question_number: 0,
-                            question_text: "Final Full Roleplay Session (Part 1-5 Combined)", // Updated text
+                            question_text: `Final Full Roleplay Session (Difficulty: ${document.querySelector('input[name="difficulty"]:checked').value})`, 
                             audio_url: publicUrl,
                             duration_seconds: audioBlob.size > 0 ? (audioBlob.size / 100000) : 0 
                         }
@@ -637,11 +706,6 @@
             if (masterAudioChunks.length === 0) {
                 alert("ไม่มีไฟล์เสียงบันทึกไว้! โปรดตรวจสอบว่าคุณได้กด 'เริ่มบันทึก' และ 'หยุดบันทึก' ในทุกเทิร์นแล้ว");
                 return;
-            }
-            if (!window.inputUserName.value.trim()) { 
-                 alert("กรุณากรอกชื่อ-นามสกุล/รหัสพนักงานก่อนทำการบันทึกและอัปโหลด");
-                 window.inputUserName.focus();
-                 return;
             }
             
             window.finalSaveBtn.disabled = true; // Use new button ID
@@ -673,7 +737,6 @@
             }
         }
 
-
         // --- 12. Initialization and Event Listeners (UPDATED) ---
         
         function initializeUserAndDOM() {
@@ -685,16 +748,28 @@
             }
             currentUserId = userId;
             
-            // 2. กำหนดค่าให้กับตัวแปร DOM Elements บน window object
-            // Section 1
+            // 2. กำหนดค่าให้กับตัวแปร DOM Elements บน window object (รวมถึง span สำหรับ max rounds)
+            // Global
+            window.registrationSection = document.getElementById("registrationSection");
+            window.testSection = document.getElementById("testSection");
+            window.startTestBtn = document.getElementById("startTestBtn");
+
             window.inputUserName = document.getElementById('inputUserName'); 
+            window.loadingOverlay = document.getElementById("loadingOverlay");
+            window.loadingText = document.getElementById("loadingText");
+            window.uploadProgressBar = document.getElementById("uploadProgressBar");
+            window.certBtn = document.getElementById("certBtn");
+
+            // Section 1
             window.turnSpan = document.getElementById("turnSpan");
+            window.maxTurnSpan = document.getElementById("maxTurnSpan");
             window.s1StatusElement = document.getElementById("status"); 
             window.recordBtn = document.getElementById("recordBtn");
             window.nextRoundBtn = document.getElementById("nextRoundBtn");
             window.customerAudio = document.getElementById("customerAudio");
             // Section 2
             window.qRoundSpan = document.getElementById("qRound");
+            window.maxQSpan = document.getElementById("maxQSpan");
             window.s2StatusElement = document.getElementById("qStatus"); 
             window.startQBtn = document.getElementById("startQBtn");
             window.answerBtn = document.getElementById("answerBtn");
@@ -702,13 +777,15 @@
             window.questionAudio = document.getElementById("questionAudio");
             // Section 3
             window.cRoundSpan = document.getElementById("cRound");
+            window.maxCSpan = document.getElementById("maxCSpan");
             window.s3StatusElement = document.getElementById("cStatus"); 
             window.closeBtn = document.getElementById("closeBtn");
             window.replyBtn = document.getElementById("replyBtn");
             window.objectionAudio = document.getElementById("objectionAudio");
-            window.nextSection4Btn = document.getElementById("nextSection4Btn"); // NEW
+            window.nextSection4Btn = document.getElementById("nextSection4Btn");
             // Section 4 (NEW)
             window.hRoundSpan = document.getElementById("hRound");
+            window.maxHSpan = document.getElementById("maxHSpan");
             window.hStatusElement = document.getElementById("hStatus"); 
             window.startHBtn = document.getElementById("startHBtn");
             window.answerHBtn = document.getElementById("answerHBtn");
@@ -716,44 +793,66 @@
             window.healthAudio = document.getElementById("healthAudio");
             // Section 5 (NEW)
             window.aRoundSpan = document.getElementById("aRound");
+            window.maxASpan = document.getElementById("maxASpan");
             window.aStatusElement = document.getElementById("aStatus"); 
             window.startABtn = document.getElementById("startABtn");
             window.answerABtn = document.getElementById("answerABtn");
-            window.finalSaveBtn = document.getElementById("finalSaveBtn"); // NEW (replaces saveAllBtn)
+            window.finalSaveBtn = document.getElementById("finalSaveBtn");
             window.agreementAudio = document.getElementById("agreementAudio");
-
-            // Global
-            window.loadingOverlay = document.getElementById("loadingOverlay");
-            window.loadingText = document.getElementById("loadingText");
-            window.uploadProgressBar = document.getElementById("uploadProgressBar");
-            window.certBtn = document.getElementById("certBtn");
             
-            // 3. Prepare Game Data
-            prepareTurnFiles(); 
+            // 3. Bind Event Listeners
+            window.startTestBtn.addEventListener('click', startTest); // NEW ENTRY POINT
 
-            // 4. Bind Event Listeners
-            // Section 1
             window.recordBtn.addEventListener('click', () => window.toggleRecording(1));
             window.nextRoundBtn.addEventListener('click', window.initSection2);
-            // Section 2
             window.answerBtn.addEventListener('click', () => window.toggleRecording(2));
             window.nextSection3Btn.addEventListener('click', window.initSection3);
             window.startQBtn.addEventListener('click', window.playRandomQuestion);
-            // Section 3
             window.closeBtn.addEventListener('click', () => window.toggleRecording(3));
             window.replyBtn.addEventListener('click', () => window.toggleRecording(4));
-            window.nextSection4Btn.addEventListener('click', window.initSection4); // NEW FLOW
-            // Section 4 (NEW)
+            window.nextSection4Btn.addEventListener('click', window.initSection4); 
             window.answerHBtn.addEventListener('click', () => window.toggleRecording(5));
             window.nextSection5Btn.addEventListener('click', window.initSection5);
             window.startHBtn.addEventListener('click', window.playRandomHealthQuestion);
-            // Section 5 (NEW)
             window.answerABtn.addEventListener('click', () => window.toggleRecording(6));
             window.startABtn.addEventListener('click', window.playRandomAgreementQuestion);
-            window.finalSaveBtn.addEventListener('click', window.saveAllRecordings); // NEW SAVE BUTTON
-            
-            // Global
+            window.finalSaveBtn.addEventListener('click', window.saveAllRecordings); 
             window.certBtn.addEventListener('click', window.generateCertificate);
+        }
+
+        window.startTest = function() {
+            const userName = window.inputUserName.value.trim();
+            if (!userName) {
+                alert("กรุณากรอกชื่อ-นามสกุล/รหัสพนักงานก่อนเริ่มทำแบบทดสอบ");
+                window.inputUserName.focus();
+                return;
+            }
+            
+            const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+            const config = difficultyConfig[selectedDifficulty];
+
+            // 1. Set Global Max Rounds
+            maxTurns = config.S1;
+            maxQ = config.S2;
+            maxC = config.S3;
+            maxH = config.S4;
+            maxA = config.S5;
+
+            // 2. Update UI Spans with Max Rounds
+            window.maxTurnSpan.textContent = maxTurns;
+            window.maxQSpan.textContent = maxQ;
+            window.maxCSpan.textContent = maxC;
+            window.maxHSpan.textContent = maxH;
+            window.maxASpan.textContent = maxA;
+
+            // 3. Hide Registration and Show Test Section
+            window.registrationSection.style.display = 'none';
+            window.testSection.style.display = 'block';
+
+            // 4. Initialize Test Flow
+            prepareTurnFiles(); 
+            window.recordBtn.disabled = false;
+            window.s1StatusElement.textContent = `🎤 พร้อมบันทึกบทพูดเปิดตัว (เทิร์นที่ 1/${maxTurns})`;
         }
 
         document.addEventListener('DOMContentLoaded', initializeUserAndDOM);
