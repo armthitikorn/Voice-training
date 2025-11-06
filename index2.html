@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบจำลองฝึกพนักงานขาย (Health Q&A)</title>
+    <style>
+        /* 🎨 CSS สำหรับการจัดรูปแบบ */
+        body { font-family: 'Arial', sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .question-box { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #e9f7ff; }
+        .response-area { margin-top: 10px; padding: 10px; background-color: #fff; border: 1px dashed #ccc; border-radius: 4px; }
+        .controls button { padding: 10px 15px; margin: 5px 0; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
+        #record-start { background-color: #007bff; color: white; }
+        #record-stop { background-color: #ffc107; color: #333; }
+        #summary-button { background-color: #6c757d; color: white; }
+        #register-button { background-color: #28a745; color: white; display: none; margin-left: 10px; }
+        .log-entry { margin-top: 5px; padding: 5px; background-color: #e9ecef; border-radius: 4px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>แบบจำลองฝึกพนักงานขายประกัน 📞</h1>
+        
+        <details open>
+            <summary>บันทึกการทำงาน (Log)</summary>
+            <div id="status-log"></div>
+        </details>
+        
+        <hr>
+
+        <div class="question-box">
+            <h2 id="question-header">คำถามสุขภาพ ข้อที่ 1</h2>
+            <p id="current-question">คุณเคยมีหรือกำลังมีโรคที่เกี่ยวกับหัวใจและหลอดเลือดหรือไม่?</p>
+
+            <div class="controls">
+                <button id="record-start">🎙️ กดบันทึก (พนักงาน)</button>
+                <button id="record-stop" disabled>⏹️ กดหยุด</button>
+            </div>
+            
+            <div class="response-area">
+                **เสียงลูกค้าตอบ:** <span id="customer-response">...รอการซักถาม...</span>
+                <audio id="customer-audio" src="" hidden controls></audio>
+            </div>
+        </div>
+
+        <button id="summary-button" disabled>✅ สรุปความคุ้มครอง</button>
+        <button id="register-button" disabled>📝 ไปหน้าลงทะเบียนสมัคร</button>
+    </div>
+
+    <script>
+        // --- การตั้งค่าเริ่มต้น และตัวแปร ---
+        let currentStep = 1;
+        const totalSteps = 5; // คำถามหลัก 5 ข้อ
+        let isRecording = false;
+
+        // คำถามสุขภาพ 5 ข้อ
+        const questions = [
+            "คุณเคยมีหรือกำลังมีโรคที่เกี่ยวกับหัวใจและหลอดเลือดหรือไม่?",
+            "คุณเคยมีหรือกำลังมีโรคเบาหวาน หรือมีภาวะน้ำตาลในเลือดสูงที่ต้องรักษาหรือไม่?",
+            "คุณเคยมีหรือกำลังมีโรคเกี่ยวกับตับ ไต หรือระบบทางเดินหายใจที่ร้ายแรงหรือไม่?",
+            "คุณเคยมีหรือกำลังมีโรคความดันโลหิตสูง หรือไขมันในเลือดสูงที่ต้องรับประทานยาหรือไม่?", // Q4: คำถามที่กำหนดให้ตอบ 'เคย'
+            "คุณเคยมีหรือกำลังมีโรคมะเร็ง หรือเนื้องอกที่ต้องรักษาหรือไม่?"
+        ];
+
+        // ไฟล์เสียงลูกค้า (ใช้ URL ที่คุณให้มา)
+        const customerResponses = {
+            // ใช้สำหรับคำถาม Q1, Q2, Q3, Q5
+            'ไม่เคย': 'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q4/health5_P1_P1Q4_1762340917924.webm',
+            
+            // ใช้เสียง "ความดันสูง" ของคุณในการตอบ 'เคย' หลักของ Q4
+            'เคย': 'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q7/health5_P1_P1Q7_1762341034892.webm', 
+
+            // ไฟล์เสียงสำหรับโรคย่อยอื่นๆ
+            'ความดันสูง': 'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q7/health5_P1_P1Q7_1762341034892.webm',
+            'เบาหวาน': 'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q6/health5_P1_P1Q6_1762340992884.webm',
+            'หัวใจ': 'หัวใจ.webm', // ไม่มีไฟล์เสียงมาให้, ใช้ชื่อเดิม
+            'ไขมันสูง': 'ไขมันสูง.webm' // ไม่มีไฟล์เสียงมาให้, ใช้ชื่อเดิม
+        };
+
+        // โรคที่ซ่อนไว้สำหรับคำถามข้อที่ 4 (4 โรค)
+        const hiddenDiseases = [
+            { name: "โรคเบาหวาน", key: "เบาหวาน" },
+            { name: "ความดันสูง", key: "ความดันสูง" }, 
+            { name: "หัวใจ", key: "หัวใจ" },
+            { name: "ไขมันสูง", key: "ไขมันสูง" }
+        ];
+
+        // ไฟล์เสียงตอบคำถามย่อย (เฉพาะ "ความดันสูง" ที่มี 4 ไฟล์)
+        const pressureSubAnswers = [
+            'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q9/health5_P1_P1Q9_1762341172636.webm', // ตอบคำถามความดัน 1
+            'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q8/health5_P1_P1Q8_1762341131100.webm', // ตอบคำถาม ความดัน 2
+            'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q10/health5_P1_P1Q10_1762341190452.webm', // ตอบคำถาม ความดัน 3
+            'https://wzwyotzzxycqfwercakh.supabase.co/storage/v1/object/public/responses/part1/P1Q11/health5_P1_P1Q11_1762341222396.webm'  // ตอบคำถาม ความดัน 4
+        ];
+        
+        // เราจะกำหนดให้โรคที่สุ่มได้เป็น "ความดันสูง" เพื่อใช้ไฟล์เสียง 4 ไฟล์ของคุณ
+        let selectedDisease;
+
+
+        // --- DOM Elements ---
+        const qHeader = document.getElementById('question-header');
+        const qText = document.getElementById('current-question');
+        const recordStartBtn = document.getElementById('record-start');
+        const recordStopBtn = document.getElementById('record-stop');
+        const customerResponseSpan = document.getElementById('customer-response');
+        const customerAudio = document.getElementById('customer-audio');
+        const summaryBtn = document.getElementById('summary-button');
+        const registerBtn = document.getElementById('register-button');
+        const logArea = document.getElementById('status-log');
+
+
+        // --- ฟังก์ชันช่วยเหลือ ---
+
+        /** อัปเดต UI ตามขั้นตอนปัจจุบัน (คำถามหลัก) */
+        function updateUI(step) {
+            if (step > totalSteps) { 
+                qHeader.textContent = "✅ สิ้นสุดการซักถามสุขภาพ";
+                qText.textContent = "กรุณากดปุ่ม 'สรุปความคุ้มครอง' เพื่อดำเนินการต่อ";
+                recordStartBtn.disabled = true;
+                recordStopBtn.disabled = true;
+                summaryBtn.disabled = false;
+                customerResponseSpan.textContent = "---";
+                customerAudio.removeAttribute('src');
+                return;
+            }
+            
+            qHeader.textContent = `คำถามสุขภาพ ข้อที่ ${step}`;
+            qText.textContent = questions[step - 1];
+            
+            customerResponseSpan.textContent = "...รอการซักถาม...";
+            customerAudio.removeAttribute('src');
+            recordStartBtn.disabled = false;
+            recordStopBtn.disabled = true;
+            registerBtn.style.display = 'none';
+            registerBtn.disabled = true;
+        }
+
+        /** บันทึกการกระทำลงใน Log */
+        function logAction(actor, action) {
+            const time = new Date().toLocaleTimeString('th-TH');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `[${time}] ➡️ **${actor}:** ${action}`;
+            logArea.prepend(logEntry);
+        }
+
+        /** กำหนดคำตอบลูกค้าตามโจทย์ */
+        function getCustomerAnswer(step) {
+            if (step === 4) {
+                // Q4: ตอบ 'เคย'
+                return {
+                    text: `เคย, (โรคที่ซ่อนไว้คือ ${selectedDisease.name})`, 
+                    audio: customerResponses['เคย'] 
+                };
+            } else {
+                // Q1, Q2, Q3, Q5: ตอบ 'ไม่เคย'
+                return {
+                    text: "ไม่เคย",
+                    audio: customerResponses['ไม่เคย']
+                };
+            }
+        }
+
+        /** จัดการการซักถามโรคย่อย 4 โรค (หลัง Q4) */
+        function askHiddenDisease(subStep) {
+            // subStep จะเริ่มจาก 1 ถึง 4 (4 โรคย่อย)
+            if (subStep > hiddenDiseases.length) {
+                currentStep = 5; // ข้ามไป Q5
+                updateUI(currentStep);
+                return;
+            }
+            
+            const disease = hiddenDiseases[subStep - 1];
+            const isSelected = (disease.key === selectedDisease.key);
+            
+            let answerText = "ไม่เป็นครับ";
+            let answerAudio = customerResponses['ไม่เคย'];
+
+            // ลอจิกการตอบของโรคที่ถูกสุ่ม (ความดันสูง)
+            if (isSelected) {
+                answerAudio = pressureSubAnswers[subStep - 1]; // ใช้ไฟล์ 1-4 ตามลำดับ
+                answerText = `ใช่, เป็นโรค${disease.name} (ตอบย่อยไฟล์ที่ ${subStep}/4)`;
+            } 
+            // โค้ดนี้ถูกปรับให้ตอบ 'ไม่เคย' สำหรับโรคอื่นๆ และตอบเป็นชุด 4 ไฟล์เมื่อถาม 'ความดันสูง'
+
+            qHeader.textContent = `ซักถามโรคย่อย (หลัง Q4) ข้อที่ ${subStep}`;
+            qText.textContent = `เป็นโรค${disease.name} ด้วยหรือไม่?`;
+            
+            customerResponseSpan.textContent = answerText;
+            customerAudio.src = answerAudio;
+            customerAudio.play();
+            logAction('ลูกค้า', `ตอบ: ${answerText} (URL: ${answerAudio.substring(0, 70)}...)`);
+            
+            currentStep++; // เตรียมไปคำถามย่อยถัดไป
+        }
+
+
+        // --- Event Listeners ---
+
+        recordStartBtn.addEventListener('click', () => {
+            if (qHeader.textContent.includes("สิ้นสุด")) return;
+            
+            isRecording = true;
+            recordStartBtn.disabled = true;
+            recordStopBtn.disabled = false;
+            logAction('พนักงาน', `เริ่มบันทึกไฟล์เสียง`);
+            // โค้ดจริง: MediaRecorder.start()
+        });
+
+        recordStopBtn.addEventListener('click', () => {
+            if (!isRecording) return;
+            
+            isRecording = false;
+            recordStartBtn.disabled = false;
+            recordStopBtn.disabled = true;
+            logAction('พนักงาน', `หยุดบันทึกไฟล์เสียง`);
+            // โค้ดจริง: MediaRecorder.stop()
+
+            // หน่วงเวลา 1 วินาที (จำลองการประมวลผล)
+            setTimeout(() => {
+                
+                // ตรวจสอบว่าเป็นขั้นตอนการซักถามโรคย่อยหรือไม่
+                if (currentStep > totalSteps && currentStep <= totalSteps + hiddenDiseases.length) {
+                    const subStep = currentStep - totalSteps;
+                    askHiddenDisease(subStep);
+                    return; 
+                }
+
+                // ตอบคำถามหลัก
+                let answer = getCustomerAnswer(currentStep);
+
+                customerResponseSpan.textContent = answer.text;
+                customerAudio.src = answer.audio;
+                customerAudio.play();
+                logAction('ลูกค้า', `ตอบอัตโนมัติ: ${answer.text} (URL: ${answer.audio.substring(0, 70)}...)`);
+
+                // เลื่อนไปยังคำถามถัดไป
+                if (currentStep === 4) {
+                    // หลัง Q4 ให้เริ่มการซักถามโรคย่อย
+                    currentStep = totalSteps + 1; // เริ่มจากโรคย่อยข้อ 1
+                    askHiddenDisease(1); 
+                } else {
+                    currentStep++;
+                    updateUI(currentStep);
+                }
+
+            }, 1000); 
+        });
+
+        summaryBtn.addEventListener('click', () => {
+            logAction('ระบบ', 'พนักงานกด "สรุปความคุ้มครอง"');
+            summaryBtn.disabled = true;
+            registerBtn.style.display = 'inline-block';
+            registerBtn.disabled = false;
+        });
+
+        registerBtn.addEventListener('click', () => {
+            logAction('ระบบ', 'พนักงานกด "ไปหน้าลงทะเบียนสมัคร"');
+            alert("จำลอง: ไปหน้าลงทะเบียนสมัครความคุ้มครอง");
+        });
+
+
+        // --- เริ่มต้นโปรแกรม ---
+        // กำหนดให้สุ่มเจอความดันสูงเพื่อใช้ไฟล์เสียง 4 ไฟล์ของคุณ
+        selectedDisease = hiddenDiseases.find(d => d.key === 'ความดันสูง');
+        logAction('ระบบ', `เริ่มการฝึก: โรคที่ถูกสุ่มซ่อนใน Q4 คือ **${selectedDisease.name}** และจะตอบ 4 ครั้งตามไฟล์เสียง`);
+        updateUI(currentStep);
+    </script>
+</body>
+</html>
