@@ -42,7 +42,7 @@ audio{width:100%;margin:10px 0 6px}
 </head>
 <body>
 
-<div id="loginView" class="login hide">
+<div id="loginView" class="login">
   <h1>เข้าสู่ระบบเทรนเนอร์</h1>
   <input id="em" type="email" placeholder="อีเมล" autocomplete="username">
   <input id="pw" type="password" placeholder="รหัสผ่าน" autocomplete="current-password">
@@ -67,10 +67,19 @@ audio{width:100%;margin:10px 0 6px}
 
 <script>
 // ใส่ค่าจาก Supabase > Project Settings > API
-        const supabaseUrl = 'https://wzwyotzzxycqfwercakh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6d3lvdHp6eHljcWZ3ZXJjYWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNTg3MTMsImV4cCI6MjA3MjYzNDcxM30.lgiAf9oBUqsaWGb3u_80wuoKAODQHE_lIBxpGumhrno'; 
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
 const BUCKET = 'vq-audio';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let db;
+try {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="background:#d64545;color:#fff;padding:14px;text-align:center">เชื่อมต่อ Supabase ไม่ได้: ตรวจสอบว่าใส่ SUPABASE_URL และ SUPABASE_KEY ถูกต้อง และเน็ตโหลดสคริปต์ได้ ('
+    + e.message + ')</div>');
+  throw e;
+}
 const $ = s => document.querySelector(s);
 let team = 'tele', rows = [], recorder = null;
 
@@ -93,7 +102,7 @@ $('#loginBtn').onclick = async () => {
   showApp(true);
 };
 $('#outBtn').onclick = async () => { await db.auth.signOut(); showApp(false); };
-db.auth.getSession().then(({ data }) => showApp(!!data.session));
+db.auth.getSession().then(({ data }) => showApp(!!data.session)).catch(() => showApp(false));
 
 // ---------- data ----------
 $('#teamSel').onchange = e => { team = e.target.value; load(); };
